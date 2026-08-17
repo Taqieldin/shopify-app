@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:server": "tsc -p tsconfig.server.json",
     "preview": "vite preview",
     "server": "tsx server/index.ts",
     "start": "node --import tsx server/index.ts",

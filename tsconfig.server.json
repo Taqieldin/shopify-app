@@ -4,17 +4,13 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "outDir": "./dist-server",
-    "rootDir": ".",
+    "rootDir": "./server",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "strict": false,
     "resolveJsonModule": true,
     "declaration": false,
-    "paths": {
-      "@/*": ["./app/*"],
-      "@server/*": ["./server/*"]
-    }
+    "sourceMap": false
   },
-  "include": ["server/**/*.ts", "prisma/**/*.ts"],
-  "exclude": ["node_modules", "dist", "app", "tests", "vite.config.ts"]
+  "include": ["server/**/*.ts"]
 }
