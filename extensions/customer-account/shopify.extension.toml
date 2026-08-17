@@ -1,0 +1,23 @@
+api_version = "2025-07"
+
+[[extensions]]
+type = "ui_extension"
+name = "Customer Private Club & Vault"
+handle = "customer-private-club"
+uid = "e90d1769-9772-a535-6b97-47df4f6eb4793a2be028"
+
+  [[extensions.targeting]]
+  target = "customer-account.page.render"
+  module = "./src/index.tsx"
+
+  [extensions.capabilities]
+  api_access = true
+  network_access = true
+
+  [extensions.settings]
+    [[extensions.settings.fields]]
+    key = "app_api_url"
+    type = "single_line_text_field"
+    name = "App Backend URL"
+    description = "The base URL of the deployed app backend (e.g. https://your-app.herokuapp.com)"
+    default = "http://localhost:3000"

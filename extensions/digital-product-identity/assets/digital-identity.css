@@ -1,0 +1,94 @@
+.dpi-container {
+  margin: 1.5rem 0;
+  width: 100%;
+}
+
+.dpi-card {
+  background: var(--dpi-bg-color, #18181b);
+  border: 1px solid var(--dpi-border-color, #27272a);
+  border-radius: 12px;
+  padding: 1.25rem;
+  color: #f4f4f5;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.dpi-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.dpi-icon {
+  color: var(--dpi-accent, #d97706);
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.dpi-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+  color: #f4f4f5;
+  letter-spacing: 0.02em;
+}
+
+.dpi-subtitle {
+  font-size: 0.8rem;
+  color: #a1a1aa;
+  margin-top: 0.2rem;
+  line-height: 1.4;
+}
+
+.dpi-feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.dpi-feature-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: #d4d4d8;
+}
+
+.dpi-check {
+  color: var(--dpi-accent, #d97706);
+  font-weight: bold;
+}
+
+.dpi-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 0.75rem;
+}
+
+.dpi-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #10b981;
+}
+
+.dpi-cta-button {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--dpi-accent, #d97706);
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.dpi-cta-button:hover {
+  opacity: 0.85;
+}

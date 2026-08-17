@@ -1,0 +1,147 @@
+{% comment %}
+  Digital Product Identity — Theme App Block
+  Theme-Agnostic, Lightweight, Zero Foreign Framework Bloat
+{% endcomment %}
+
+{{ 'digital-identity.css' | asset_url | stylesheet_tag }}
+
+<div
+  class="dpi-container dpi-align-{{ block.settings.alignment }}"
+  style="--dpi-border-color: {{ block.settings.border_color }}; --dpi-bg-color: {{ block.settings.background_color }}; --dpi-accent: {{ block.settings.accent_color }};"
+>
+  <div class="dpi-card">
+    <div class="dpi-header">
+      {% if block.settings.show_icon %}
+        <span class="dpi-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </span>
+      {% endif %}
+      <div>
+        <h3 class="dpi-title">{{ block.settings.title | default: "Digital Product Identity" }}</h3>
+        <p class="dpi-subtitle">{{ block.settings.subtitle | default: "Every piece carries a persistent digital passport and verified provenance." }}</p>
+      </div>
+    </div>
+
+    {% if block.settings.show_features %}
+      <ul class="dpi-feature-list" role="list">
+        <li>
+          <span class="dpi-check">✓</span>
+          <span>{{ block.settings.feature_1 | default: "Unique Serialized Digital Passport" }}</span>
+        </li>
+        <li>
+          <span class="dpi-check">✓</span>
+          <span>{{ block.settings.feature_2 | default: "NFC & QR Authenticity Verification" }}</span>
+        </li>
+        <li>
+          <span class="dpi-check">✓</span>
+          <span>{{ block.settings.feature_3 | default: "Lifetime Provenance & Atelier Care Registry" }}</span>
+        </li>
+      </ul>
+    {% endif %}
+
+    <div class="dpi-footer">
+      <span class="dpi-badge">{{ block.settings.badge_text | default: "Authenticity Guaranteed" }}</span>
+      <a
+        href="/apps/passport/product/{{ product.id }}"
+        class="dpi-cta-button"
+        title="Discover Product Digital Passport"
+      >
+        {{ block.settings.cta_label | default: "Discover Passport" }} &rarr;
+      </a>
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Digital Product Identity",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Block Title",
+      "default": "Digital Product Identity"
+    },
+    {
+      "type": "textarea",
+      "id": "subtitle",
+      "label": "Description",
+      "default": "Each individual creation carries a unique digital passport and lifetime provenance registry."
+    },
+    {
+      "type": "select",
+      "id": "alignment",
+      "label": "Alignment",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" }
+      ],
+      "default": "left"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_icon",
+      "label": "Show Shield Icon",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_features",
+      "label": "Show Features Checklist",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "feature_1",
+      "label": "Feature 1",
+      "default": "Serialized Digital Passport"
+    },
+    {
+      "type": "text",
+      "id": "feature_2",
+      "label": "Feature 2",
+      "default": "NFC & QR Cryptographic Verification"
+    },
+    {
+      "type": "text",
+      "id": "feature_3",
+      "label": "Feature 3",
+      "default": "Ownership Registry & Atelier Care"
+    },
+    {
+      "type": "text",
+      "id": "badge_text",
+      "label": "Badge Text",
+      "default": "Authenticity Guaranteed"
+    },
+    {
+      "type": "text",
+      "id": "cta_label",
+      "label": "CTA Button Label",
+      "default": "Discover Passport"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Card Background",
+      "default": "#18181b"
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Border Color",
+      "default": "#27272a"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent Color",
+      "default": "#d97706"
+    }
+  ]
+}
+{% endschema %}

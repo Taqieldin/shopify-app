@@ -1,0 +1,867 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------
+// 1. SHOP & MULTI-TENANCY
+// ----------------------------------------------------
+
+model Shop {
+  id              String   @id @default(uuid())
+  shopify_shop_id String   @unique
+  shop_domain     String   @unique
+  status          String   @default("ACTIVE") // ACTIVE, INACTIVE, FROZEN, UNINSTALLED
+  plan            String   @default("FREE")   // FREE, STARTER, PRO, ENTERPRISE
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  settings          ShopSettings?
+  features          ShopFeatureFlag?
+  products          ShopifyProductReference[]
+  physical_pieces   PhysicalPiece[]
+  passports         Passport[]
+  public_field_cfg  PassportPublicFieldConfig?
+  customers         Customer[]
+  ownerships        Ownership[]
+  transfers         OwnershipTransfer[]
+  certificates      TransferCertificate[]
+  gifts             GiftRegistration[]
+  auth_events       AuthenticationEvent[]
+  risk_events       AuthenticationRiskEvent[]
+  membership_tiers  MembershipTier[]
+  memberships       CustomerMembership[]
+  credits_ledger    CreditsLedger[]
+  benefits          Benefit[]
+  benefit_claims    BenefitRedemption[]
+  early_access      EarlyAccessRule[]
+  care_schedules    CareSchedule[]
+  services          ServiceCase[]
+  warranties        WarrantyRecord[]
+  lost_stolen       LostStolenReport[]
+  notifications     NotificationLog[]
+  audit_logs        AuditLog[]
+  subscriptions     BillingSubscription[]
+  background_jobs   BackgroundJob[]
+  nfc_blocklist     NFCBlocklist[]
+  api_keys          APIKey[]
+  webhook_endpoints WebhookEndpoint[]
+  resale_listings   ResaleListing[]
+  nfc_write_logs    NFCWriteLog[]
+  club_events       ClubEvent[]
+  event_check_ins   EventCheckIn[]
+
+  @@index([shopify_shop_id])
+  @@index([shop_domain])
+}
+
+model ShopSettings {
+  id                    String   @id @default(uuid())
+  shop_id               String   @unique
+  brand_name            String   @default("Luxury Maison")
+  logo_url              String?
+  primary_color         String   @default("#18181b")
+  secondary_color       String   @default("#71717a")
+  accent_color          String   @default("#d97706")
+  font_family           String   @default("Inter")
+  passport_term         String   @default("Digital Passport")
+  club_name             String   @default("Maison Privé")
+  credits_term          String   @default("Maison Credits")
+  membership_terms_json String   @default("{\"tiers\":[\"Maison\",\"Atelier\",\"Privé\"]}")
+  public_story_enabled  Boolean  @default(true)
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  shop Shop @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+}
+
+model ShopFeatureFlag {
+  id                       String   @id @default(uuid())
+  shop_id                  String   @unique
+  digital_passport_enabled Boolean  @default(true)
+  authentication_enabled   Boolean  @default(true)
+  nfc_enabled              Boolean  @default(true)
+  qr_enabled               Boolean  @default(true)
+  ownership_enabled        Boolean  @default(true)
+  transfer_enabled         Boolean  @default(true)
+  gift_registration_enabled Boolean @default(true)
+  membership_enabled       Boolean  @default(true)
+  credits_enabled          Boolean  @default(true)
+  benefits_enabled         Boolean  @default(true)
+  early_access_enabled     Boolean  @default(true)
+  care_enabled             Boolean  @default(true)
+  service_enabled          Boolean  @default(true)
+  warranty_enabled         Boolean  @default(true)
+  lost_stolen_enabled      Boolean  @default(true)
+  notifications_enabled    Boolean  @default(true)
+  analytics_enabled        Boolean  @default(true)
+
+  shop Shop @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------------------------------
+// 2. SHOPIFY PRODUCT REFERENCE & PHYSICAL PIECES
+// ----------------------------------------------------
+
+model ShopifyProductReference {
+  id                    String   @id @default(uuid())
+  shop_id               String
+  shopify_product_id    String
+  shopify_variant_id    String?
+  title                 String
+  handle                String
+  image_url             String?
+  category              String?
+  verification_methods  String   @default("[\"NFC\",\"QR\",\"SERIAL_LOOKUP\"]") // JSON array: NFC, QR, SERIAL_LOOKUP, MANUAL
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  shop            Shop            @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  physical_pieces PhysicalPiece[]
+
+  @@unique([shop_id, shopify_product_id, shopify_variant_id])
+  @@index([shop_id, shopify_product_id])
+}
+
+model ResaleListing {
+  id                  String    @id @default(uuid())
+  shop_id             String
+  physical_piece_id   String
+  seller_customer_id  String
+  buyer_customer_id   String?
+  price               Float
+  currency            String    @default("EUR")
+  status              String    @default("LISTED") // LISTED, SOLD, CANCELLED
+  notes               String?
+  transfer_id         String?
+  listed_at           DateTime  @default(now())
+  sold_at             DateTime?
+  cancelled_at        DateTime?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  @@unique([transfer_id])
+
+  shop           Shop          @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  physical_piece PhysicalPiece @relation(fields: [physical_piece_id], references: [id], onDelete: Cascade)
+  seller         Customer      @relation("ResaleListings", fields: [seller_customer_id], references: [id], onDelete: Cascade)
+  buyer          Customer?     @relation("ResalePurchases", fields: [buyer_customer_id], references: [id], onDelete: SetNull)
+  transfer       OwnershipTransfer? @relation(fields: [transfer_id], references: [id], onDelete: SetNull)
+
+  @@index([shop_id, status])
+  @@index([shop_id, physical_piece_id])
+}
+
+model NFCWriteLog {
+  id                      String    @id @default(uuid())
+  shop_id                 String
+  physical_piece_id       String
+  previous_owner_customer_id String?
+  new_owner_customer_id   String
+  transfer_count          Int       @default(1)
+  encrypted_payload       String
+  algorithm               String    @default("AES-256-GCM")
+  created_at              DateTime  @default(now())
+
+  shop           Shop          @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  physical_piece PhysicalPiece @relation(fields: [physical_piece_id], references: [id], onDelete: Cascade)
+  new_owner      Customer      @relation("NFCWriteNewOwner", fields: [new_owner_customer_id], references: [id], onDelete: Cascade)
+  previous_owner Customer?     @relation("NFCWritePreviousOwner", fields: [previous_owner_customer_id], references: [id], onDelete: SetNull)
+
+  @@index([shop_id, physical_piece_id])
+  @@index([shop_id, created_at])
+}
+
+model ClubEvent {
+  id            String    @id @default(uuid())
+  shop_id       String
+  name          String
+  description   String?
+  location      String?
+  starts_at     DateTime
+  ends_at       DateTime
+  status        String    @default("SCHEDULED") // SCHEDULED, LIVE, ENDED, CANCELLED
+  credits_award Int       @default(100)
+  created_by    String
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  shop      Shop             @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  check_ins EventCheckIn[]
+
+  @@index([shop_id, status])
+  @@index([shop_id, starts_at])
+}
+
+model EventCheckIn {
+  id               String    @id @default(uuid())
+  shop_id          String
+  event_id         String
+  customer_id      String
+  method           String    @default("MANUAL") // NFC, QR, MANUAL
+  nfc_uid          String?
+  credits_awarded  Int
+  checked_in_at    DateTime  @default(now())
+
+  shop      Shop       @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  event     ClubEvent  @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  customer  Customer   @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+
+  @@unique([shop_id, event_id, customer_id])
+  @@index([shop_id, checked_in_at])
+}
+
+model PhysicalPiece {
+  id                     String   @id @default(uuid())
+  shop_id                String
+  product_ref_id         String
+  serial                 String
+  edition_number         Int?
+  edition_total          Int?
+  status                 String   @default("MANUFACTURED") // MANUFACTURED, REGISTERED, TRANSFERRED, SERVICED, RESTORED, LOST, STOLEN, REVOKED, RETIRED
+  nfc_uid                String?
+  nfc_encryption_key     String?  // Encrypted storage of NTAG424 key
+  qr_code_payload        String?
+  manufacturing_date     DateTime?
+  manufacturing_location String?
+  materials_json         String?  // JSON Array of material specs
+  color                  String?
+  dimensions             String?
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+
+  shop         Shop                    @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  product_ref  ShopifyProductReference @relation(fields: [product_ref_id], references: [id], onDelete: Cascade)
+  passport     Passport?
+  ownerships   Ownership[]
+  transfers    OwnershipTransfer[]
+  certificates TransferCertificate[]
+  gifts        GiftRegistration[]
+  auth_events  AuthenticationEvent[]
+  risk_events  AuthenticationRiskEvent[]
+  care_rules   CareSchedule[]
+  services     ServiceCase[]
+  warranties   WarrantyRecord[]
+  lost_reports LostStolenReport[]
+  resale_listings ResaleListing[]
+  nfc_write_logs  NFCWriteLog[]
+
+  @@unique([shop_id, serial])
+  @@index([shop_id, product_ref_id])
+  @@index([shop_id, nfc_uid])
+}
+
+// ----------------------------------------------------
+// 3. DIGITAL PRODUCT PASSPORT
+// ----------------------------------------------------
+
+model Passport {
+  id                  String   @id @default(uuid())
+  shop_id             String
+  physical_piece_id   String   @unique
+  status              String   @default("ACTIVE") // DRAFT, ACTIVE, REVOKED
+  title               String
+  description         String?
+  hero_image_url      String?
+  gallery_json        String?  // JSON array of URLs
+  craft_info          String?
+  heritage_story      String?
+  materials_summary   String?
+  sustainability_data String?
+  public_visibility   Boolean  @default(true)
+  view_count          Int      @default(0)
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  shop           Shop          @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  physical_piece PhysicalPiece @relation(fields: [physical_piece_id], references: [id], onDelete: Cascade)
+
+  @@index([shop_id, status])
+}
+
+model PassportPublicFieldConfig {
+  id                     String  @id @default(uuid())
+  shop_id                String  @unique
+  show_serial            Boolean @default(true)
+  show_edition           Boolean @default(true)
+  show_manufacturing_date Boolean @default(true)
+  show_location          Boolean @default(true)
+  show_materials         Boolean @default(true)
+  show_craft             Boolean @default(true)
+  show_care              Boolean @default(true)
+  show_service_history   Boolean @default(true)
+  show_ownership_status  Boolean @default(true)
+  show_warranty          Boolean @default(true)
+
+  shop Shop @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------------------------------
+// 4. CUSTOMERS, OWNERSHIP & TRANSFERS
+// ----------------------------------------------------
+
+model Customer {
+  id                  String   @id @default(uuid())
+  shop_id             String
+  shopify_customer_id String
+  email               String
+  first_name          String?
+  last_name           String?
+  locale              String   @default("en")
+  country             String?
+  status              String   @default("ACTIVE")
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  shop               Shop                     @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  ownerships         Ownership[]
+  transfers_sent     OwnershipTransfer[]      @relation("TransfersSent")
+  transfers_received OwnershipTransfer[]      @relation("TransfersReceived")
+  gifts_purchased    GiftRegistration[]
+  memberships        CustomerMembership[]
+  credits_entries    CreditsLedger[]
+  benefit_claims     BenefitRedemption[]
+  service_cases      ServiceCase[]
+  lost_reports       LostStolenReport[]
+  comm_preferences   CommunicationPreference?
+  resale_listings    ResaleListing[]          @relation("ResaleListings")
+  resale_purchases   ResaleListing[]          @relation("ResalePurchases")
+  nfc_write_new      NFCWriteLog[]            @relation("NFCWriteNewOwner")
+  nfc_write_previous NFCWriteLog[]            @relation("NFCWritePreviousOwner")
+  event_check_ins    EventCheckIn[]
+
+  @@unique([shop_id, shopify_customer_id])
+  @@unique([shop_id, email])
+  @@index([shop_id, email])
+}
+
+model Ownership {
+  id                String    @id @default(uuid())
+  shop_id           String
+  physical_piece_id String
+  customer_id       String
+  is_active         Boolean   @default(true)
+  started_at        DateTime  @default(now())
+  ended_at          DateTime?
+  source            String    @default("REGISTRATION") // DIRECT_PURCHASE, REGISTRATION, TRANSFER_ACCEPTANCE, GIFT, RESALE, ADMIN_OVERRIDE
+  transfer_id       String?
+  notes             String?
+  created_at        DateTime  @default(now())
+
+  shop           Shop          @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  physical_piece PhysicalPiece @relation(fields: [physical_piece_id], references: [id], onDelete: Cascade)
+  customer       Customer      @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+
+  @@index([shop_id, physical_piece_id, is_active])
+  @@index([shop_id, customer_id, is_active])
+}
+
+model OwnershipTransfer {
+  id                    String    @id @default(uuid())
+  shop_id               String
+  physical_piece_id     String
+  sender_customer_id    String
+  recipient_email       String
+  recipient_name        String?
+  recipient_customer_id String?
+  transfer_token        String    @unique
+  status                String    @default("PENDING") // DRAFT, PENDING, ACCEPTED, COMPLETED, EXPIRED, CANCELLED, REJECTED, REVOKED
+  expires_at            DateTime
+  accepted_at           DateTime?
+  cancelled_at          DateTime?
+  security_hash         String?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  shop           Shop                 @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  physical_piece PhysicalPiece        @relation(fields: [physical_piece_id], references: [id], onDelete: Cascade)
+  sender         Customer             @relation("TransfersSent", fields: [sender_customer_id], references: [id], onDelete: Cascade)
+  recipient      Customer?            @relation("TransfersReceived", fields: [recipient_customer_id], references: [id], onDelete: SetNull)
+  certificate    TransferCertificate?
+  resale_listing ResaleListing?
+
+  @@index([shop_id, physical_piece_id])
+  @@index([shop_id, transfer_token])
+  @@index([shop_id, status])
+}
+
+model TransferCertificate {
+  id                  String   @id @default(uuid())
+  shop_id             String
+  transfer_id         String   @unique
+  physical_piece_id   String
+  certificate_number  String   @unique
+  issued_at           DateTime @default(now())
+  verification_hash   String
+  digital_signature   String
+  metadata_json       String?
+
+  shop           Shop              @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  transfer       OwnershipTransfer @relation(fields: [transfer_id], references: [id], onDelete: Cascade)
+  physical_piece PhysicalPiece     @relation(fields: [physical_piece_id], references: [id], onDelete: Cascade)
+
+  @@index([shop_id, certificate_number])
+}
+
+model GiftRegistration {
+  id                    String    @id @default(uuid())
+  shop_id               String
+  physical_piece_id     String
+  purchaser_customer_id String
+  recipient_email       String
+  recipient_name        String?
+  claim_code            String    @unique
+  status                String    @default("PENDING") // PENDING, CLAIMED, EXPIRED
+  claimed_at            DateTime?
+  created_at            DateTime  @default(now())
+
+  shop           Shop          @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  physical_piece PhysicalPiece @relation(fields: [physical_piece_id], references: [id], onDelete: Cascade)
+  purchaser      Customer      @relation(fields: [purchaser_customer_id], references: [id], onDelete: Cascade)
+
+  @@index([shop_id, claim_code])
+}
+
+// ----------------------------------------------------
+// 5. AUTHENTICATION & TELEMETRY RISK ENGINE
+// ----------------------------------------------------
+
+model AuthenticationEvent {
+  id                String   @id @default(uuid())
+  shop_id           String
+  physical_piece_id String
+  method            String   // NFC, QR, SERIAL_LOOKUP, MANUAL
+  result            String   // AUTHENTICATED, UNREGISTERED, PENDING_VERIFICATION, SUSPICIOUS, REVOKED
+  risk_level        String   @default("NORMAL") // NORMAL, LOW_RISK, REVIEW, HIGH_RISK
+  nfc_uid           String?  // Added for security tracking
+  nfc_read_counter  Int?
+  ip_hash           String?
+  device_hash       String?
+  country           String?
+  city              String?
+  metadata_json     String?
+  created_at        DateTime @default(now())
+
+  shop           Shop          @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  physical_piece PhysicalPiece @relation(fields: [physical_piece_id], references: [id], onDelete: Cascade)
+
+  @@index([shop_id, physical_piece_id])
+  @@index([shop_id, created_at])
+  @@index([nfc_uid])
+}
+
+model AuthenticationRiskEvent {
+  id                String    @id @default(uuid())
+  shop_id           String
+  physical_piece_id String
+  anomaly_type      String    // IMPOSSIBLE_TRAVEL, RAPID_VELOCITY, COUNTER_MISMATCH, REPEATED_FAILURES, BLACKLIST_HIT, HIGH_FREQUENCY_SCAN, MULTIPLE_IP_ADDRESSES, NFC_UID_MISMATCH, AUTOMATED_SCANNER
+  severity          String    // LOW, MEDIUM, HIGH, CRITICAL
+  details_json      String?
+  resolved          Boolean   @default(false)
+  resolved_by       String?
+  resolved_at       DateTime?
+  notes             String?   // Resolution notes
+  reviewed_by       String?   // Who reviewed the alert
+  reviewed_at       DateTime? // When alert was reviewed
+  created_at        DateTime  @default(now())
+
+  shop           Shop          @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  physical_piece PhysicalPiece @relation(fields: [physical_piece_id], references: [id], onDelete: Cascade)
+
+  @@index([shop_id, physical_piece_id])
+  @@index([shop_id, resolved])
+  @@index([shop_id, severity])
+}
+
+// ----------------------------------------------------
+// 6. PRIVATE CLUB, MEMBERSHIPS & CREDITS LEDGER
+// ----------------------------------------------------
+
+model MembershipTier {
+  id               String   @id @default(uuid())
+  shop_id          String
+  tier_level       Int      @default(1) // 1: Maison, 2: Atelier, 3: Privé
+  name             String
+  code             String
+  description      String?
+  badge_color      String   @default("#18181b")
+  required_spend   Float    @default(0.0)
+  required_pieces  Int      @default(0)
+  required_credits Int      @default(0)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  shop            Shop                 @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  memberships     CustomerMembership[]
+  benefits        Benefit[]
+  early_accesses  EarlyAccessRule[]
+
+  @@unique([shop_id, code])
+  @@index([shop_id, tier_level])
+}
+
+model CustomerMembership {
+  id         String    @id @default(uuid())
+  shop_id    String
+  customer_id String
+  tier_id    String
+  status     String    @default("ACTIVE") // ACTIVE, EXPIRED, PAUSED
+  granted_at DateTime  @default(now())
+  expires_at DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  shop     Shop           @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  customer Customer       @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  tier     MembershipTier @relation(fields: [tier_id], references: [id], onDelete: Cascade)
+
+  @@unique([shop_id, customer_id])
+  @@index([shop_id, customer_id, status])
+}
+
+model CreditsLedger {
+  id             String   @id @default(uuid())
+  shop_id        String
+  customer_id    String
+  amount         Int      // Positive = Credit, Negative = Debit
+  type           String   // EARN, REDEEM, BONUS, ADJUSTMENT, REVERSAL, EXPIRY
+  reason         String
+  reference_type String?  // ORDER, REGISTRATION, SERVICE, MANUAL_ADMIN, TRANSFER
+  reference_id   String?
+  created_by     String   @default("SYSTEM") // SYSTEM, ADMIN:<staff_id>
+  created_at     DateTime @default(now())
+
+  shop     Shop     @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+
+  @@index([shop_id, customer_id, created_at])
+  @@index([shop_id, type])
+}
+
+model Benefit {
+  id                        String   @id @default(uuid())
+  shop_id                   String
+  tier_id                   String?
+  title                     String
+  description               String?
+  benefit_type              String   @default("COMPLIMENTARY_CARE") // EARLY_ACCESS, PRIVATE_EVENT, COMPLIMENTARY_CARE, PRIORITY_SERVICE, CONCIERGE, DISCOUNT
+  icon_name                 String   @default("Sparkles")
+  is_active                 Boolean  @default(true)
+  max_redemptions_per_user  Int      @default(1)
+  expires_at                DateTime?
+  created_at                DateTime @default(now())
+  updated_at                DateTime @updatedAt
+
+  shop        Shop                @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  tier        MembershipTier?     @relation(fields: [tier_id], references: [id], onDelete: SetNull)
+  redemptions BenefitRedemption[]
+
+  @@index([shop_id, is_active])
+}
+
+model BenefitRedemption {
+  id              String   @id @default(uuid())
+  shop_id         String
+  benefit_id      String
+  customer_id     String
+  status          String   @default("CONFIRMED") // PENDING, CONFIRMED, FULFILLED, CANCELLED
+  redemption_code String   @unique
+  metadata_json   String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  shop     Shop     @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  benefit  Benefit  @relation(fields: [benefit_id], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+
+  @@index([shop_id, customer_id])
+}
+
+model EarlyAccessRule {
+  id                 String    @id @default(uuid())
+  shop_id            String
+  shopify_product_id String
+  tier_id            String?
+  starts_at          DateTime
+  ends_at            DateTime?
+  is_active          Boolean   @default(true)
+  created_at         DateTime  @default(now())
+
+  shop Shop            @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  tier MembershipTier? @relation(fields: [tier_id], references: [id], onDelete: SetNull)
+
+  @@index([shop_id, shopify_product_id, is_active])
+}
+
+// ----------------------------------------------------
+// 7. CARE, SERVICES & WARRANTIES
+// ----------------------------------------------------
+
+model CareSchedule {
+  id                 String   @id @default(uuid())
+  shop_id            String
+  physical_piece_id  String
+  interval_months    Int      @default(12)
+  service_type       String   // ANNUAL_INSPECTION, POLISHING, LEATHER_SPA, RESTORATION
+  recommended_action String
+  next_due_date      DateTime
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  shop           Shop          @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  physical_piece PhysicalPiece @relation(fields: [physical_piece_id], references: [id], onDelete: Cascade)
+
+  @@index([shop_id, physical_piece_id])
+}
+
+model ServiceCase {
+  id                 String    @id @default(uuid())
+  shop_id            String
+  case_number        String    @unique
+  physical_piece_id  String
+  customer_id        String?
+  service_type       String    // INSPECTION, CLEANING, POLISHING, RESTORATION, HARDWARE_SERVICE, REPAIR, AUTHENTICATION_CHECK
+  status             String    @default("RECEIVED") // OPEN, RECEIVED, IN_PROGRESS, AWAITING_PARTS, COMPLETED, CANCELLED
+  technician_name    String?
+  received_date      DateTime  @default(now())
+  completed_date     DateTime?
+  cost_amount        Float     @default(0.0)
+  warranty_covered   Boolean   @default(false)
+  internal_notes     String?   // Confidential, never shown to customer
+  customer_notes     String?   // Customer-facing updates
+  photos_json        String?   // Array of photo URLs
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  shop           Shop          @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  physical_piece PhysicalPiece @relation(fields: [physical_piece_id], references: [id], onDelete: Cascade)
+  customer       Customer?     @relation(fields: [customer_id], references: [id], onDelete: SetNull)
+
+  @@index([shop_id, physical_piece_id])
+  @@index([shop_id, status])
+}
+
+model WarrantyRecord {
+  id                String    @id @default(uuid())
+  shop_id           String
+  physical_piece_id String
+  warranty_type     String    @default("MANUFACTURER_WARRANTY")
+  start_date        DateTime  @default(now())
+  end_date          DateTime
+  coverage_summary  String?
+  status            String    @default("ACTIVE") // ACTIVE, EXPIRED, VOIDED, EXTENDED
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  shop           Shop          @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  physical_piece PhysicalPiece @relation(fields: [physical_piece_id], references: [id], onDelete: Cascade)
+
+  @@index([shop_id, physical_piece_id, status])
+}
+
+// ----------------------------------------------------
+// 8. LOST & STOLEN REGISTRY
+// ----------------------------------------------------
+
+model LostStolenReport {
+  id                    String    @id @default(uuid())
+  shop_id               String
+  physical_piece_id     String
+  reporter_customer_id  String?
+  report_type           String    // LOST, STOLEN
+  status                String    @default("CONFIRMED") // REPORTED, UNDER_REVIEW, CONFIRMED, RECOVERED, REJECTED
+  incident_date         DateTime?
+  incident_location     String?
+  police_report_number  String?
+  internal_notes        String?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  shop           Shop          @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  physical_piece PhysicalPiece @relation(fields: [physical_piece_id], references: [id], onDelete: Cascade)
+  reporter       Customer?     @relation(fields: [reporter_customer_id], references: [id], onDelete: SetNull)
+
+  @@index([shop_id, physical_piece_id])
+  @@index([shop_id, status])
+}
+
+// ----------------------------------------------------
+// 9. NOTIFICATIONS & PREFERENCES
+// ----------------------------------------------------
+
+model NotificationLog {
+  id                String   @id @default(uuid())
+  shop_id           String
+  recipient_email   String
+notification_type String // PASSPORT_REGISTERED, OWNERSHIP_TRANSFERRED, CARE_REMINDER_DUE, WARRANTY_EXPIRING, GIFT_PRESENTED, GIFT_CLAIMED, PIECE_VERIFIED, RESALE_SOLD, EVENT_CHECKED_IN
+  status            String   @default("SENT") // SENT, FAILED, QUEUED
+  subject           String
+  payload_json      String?
+  created_at        DateTime @default(now())
+
+  shop Shop @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+
+  @@index([shop_id, created_at])
+}
+
+model CommunicationPreference {
+  id                      String   @id @default(uuid())
+  shop_id                 String
+  customer_id             String   @unique
+  email_opt_in            Boolean  @default(true)
+  service_reminders       Boolean  @default(true)
+  care_reminders          Boolean  @default(true)
+  private_access_invites  Boolean  @default(true)
+  marketing_opt_in        Boolean  @default(false)
+  updated_at              DateTime @updatedAt
+
+  customer Customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------------------------------
+// 10. AUDIT LOGS, BILLING & BACKGROUND JOBS
+// ----------------------------------------------------
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  shop_id       String
+  actor_type    String   // MERCHANT_ADMIN, MERCHANT_STAFF, CUSTOMER, SYSTEM
+  actor_id      String
+  action        String   // PASSPORT_CREATED, PASSPORT_REVOKED, OWNERSHIP_TRANSFERRED, SERVICE_CREATED, CREDITS_GRANTED, PRODUCT_MARKED_STOLEN, NFC_UID_BLOCKED, etc.
+  resource_type String   // PASSPORT, PHYSICAL_PIECE, OWNERSHIP, CREDITS, SERVICE, MEMBERSHIP, SETTINGS, NFC_TAG, SECURITY
+  resource_id   String
+  ip_address    String?
+  user_agent    String?  // Added for security tracking
+  metadata_json String?
+  created_at    DateTime @default(now())
+
+  shop Shop @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+
+  @@index([shop_id, created_at])
+  @@index([shop_id, resource_type, resource_id])
+  @@index([shop_id, action])
+}
+
+model BillingSubscription {
+  id                      String    @id @default(uuid())
+  shop_id                 String
+  shopify_subscription_id String?   @unique
+  plan_name               String    @default("PRO") // FREE, STARTER, PRO, ENTERPRISE
+  status                  String    @default("ACTIVE") // TRIAL, ACTIVE, PAUSED, CANCELLED, EXPIRED
+  trial_ends_at           DateTime?
+  billing_cycle           String    @default("EVERY_30_DAYS")
+  amount                  Float     @default(49.0)
+  created_at              DateTime  @default(now())
+  updated_at              DateTime  @updatedAt
+
+  shop Shop @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+
+  @@index([shop_id, status])
+}
+
+model BackgroundJob {
+  id           String    @id @default(uuid())
+  shop_id      String
+  job_type     String    // EMAIL_NOTIFICATION, CARE_REMINDER_CRON, CSV_IMPORT, AGGREGATE_METRICS
+  payload_json String
+  status       String    @default("QUEUED") // QUEUED, PROCESSING, COMPLETED, FAILED
+  attempts     Int       @default(0)
+  max_attempts Int       @default(3)
+  error_message String?
+  available_at DateTime  @default(now())
+  processed_at DateTime?
+  created_at   DateTime  @default(now())
+
+  shop Shop @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+
+  @@index([shop_id, status, available_at])
+}
+
+// ----------------------------------------------------
+// 11. SECURITY - NFC BLOCKLIST
+// ----------------------------------------------------
+
+model NFCBlocklist {
+  id            String    @id @default(uuid())
+  shop_id       String
+  nfc_uid       String
+  reason        String
+  blocked_by    String    // Actor ID who blocked
+  blocked_at    DateTime  @default(now())
+  is_active     Boolean   @default(true)
+  unblocked_at  DateTime?
+  unblocked_by  String?
+  notes         String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  shop Shop @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+
+  @@unique([shop_id, nfc_uid])
+  @@index([shop_id, is_active])
+  @@index([nfc_uid])
+}
+
+// ----------------------------------------------------
+// 12. INTEGRATIONS - API KEYS & WEBHOOKS
+// ----------------------------------------------------
+
+model APIKey {
+  id             String    @id @default(uuid())
+  shop_id        String
+  name           String
+  description    String?
+  key_prefix     String
+  hashed_key     String    @unique
+  tier           String    @default("free") // free, starter, pro, enterprise
+  scopes_json    String    @default("[]")
+  rate_limit     Int       @default(100) // requests per hour
+  requests_count Int       @default(0)
+  last_used_at   DateTime?
+  expires_at     DateTime?
+  is_active      Boolean   @default(true)
+  created_at     DateTime  @default(now())
+
+  shop Shop @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+
+  @@index([shop_id, is_active])
+}
+
+model WebhookEndpoint {
+  id                String    @id @default(uuid())
+  shop_id           String
+  url               String
+  secret            String
+  events_json       String    // JSON array of subscribed events
+  description       String?
+  is_active         Boolean   @default(true)
+  last_triggered_at DateTime?
+  success_count     Int       @default(0)
+  failure_count     Int       @default(0)
+  created_at        DateTime  @default(now())
+
+  shop       Shop               @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([shop_id, is_active])
+}
+
+model WebhookDelivery {
+  id              String    @id @default(uuid())
+  webhook_id      String
+  event           String
+  payload_json    String
+  status          String    @default("SUCCESS") // SUCCESS, FAILED, ERROR
+  response_status Int?
+  response_body   String?
+  error_message   String?
+  created_at      DateTime  @default(now())
+
+  webhook WebhookEndpoint @relation(fields: [webhook_id], references: [id], onDelete: Cascade)
+
+  @@index([webhook_id, created_at])
+}

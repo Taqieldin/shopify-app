@@ -1,0 +1,10 @@
+{
+  "name": "Digital Product Identity",
+  "description": "Every piece carries a persistent digital passport and verified provenance.",
+  "blocks": {
+    "digital-identity": {
+      "name": "Digital Product Identity",
+      "description": "Shows the product's digital passport card with verification features and CTA."
+    }
+  }
+}
