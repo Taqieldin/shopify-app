@@ -1,13 +1,10 @@
-# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
-
 client_id = "d8e86b3cf5b1deb9ed0cf04d5fc7473c"
 name = "Private Club"
 handle = "digital-passport-private-club"
-application_url = "https://shopify.dev/apps/default-app-home"
+application_url = "https://shub-uk.com"
 embedded = true
 
 [build]
-include_config_on_deploy = true
 automatically_update_urls_on_dev = true
 
 [access_scopes]
@@ -15,12 +12,12 @@ scopes = "read_products,write_products,read_customers,read_orders,read_content,w
 
 [auth]
 redirect_urls = [
-  "http://localhost:3000/auth/callback",
-  "http://localhost:3000/auth/shopify/callback"
+  "https://shub-uk.com/auth/callback",
+  "https://shub-uk.com/auth/shopify/callback"
 ]
 
 [webhooks]
-api_version = "2026-01"
+api_version = "2025-07"
 
   [[webhooks.subscriptions]]
   uri = "/api/webhooks/app-uninstalled"
