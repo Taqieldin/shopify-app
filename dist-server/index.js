@@ -1,15 +1,14 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
 import { publicRouter } from './routes/public.routes.js';
 import { customerRouter } from './routes/customer.routes.js';
 import { adminRouter } from './routes/admin.routes.js';
 import { webhookRouter } from './routes/webhook.routes.js';
 import { authRouter } from './routes/auth.routes.js';
 import { errorHandler } from './middleware/error-handler.js';
-dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 app.use(cors());
