@@ -149,7 +149,7 @@ export const TransfersView: React.FC = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
                   <Box padding="300" borderRadius="200" borderColor="border" borderWidth="100">
-                    <Text as="p" variant="bodySm" color="subdued">
+                    <Text as="p" variant="bodySm" tone="subdued">
                       Current Owner (Sender):
                     </Text>
                     <Text as="p" variant="bodySm" fontWeight="semibold">
@@ -157,7 +157,7 @@ export const TransfersView: React.FC = () => {
                     </Text>
                   </Box>
                   <Box padding="300" borderRadius="200" borderColor="border" borderWidth="100">
-                    <Text as="p" variant="bodySm" color="subdued">
+                    <Text as="p" variant="bodySm" tone="subdued">
                       Designated Recipient:
                     </Text>
                     <Text as="p" variant="bodySm" fontWeight="semibold">
@@ -179,7 +179,7 @@ export const TransfersView: React.FC = () => {
                   <Box paddingBlockStart="300">
                     <InlineStack align="space-between" blockAlign="center">
                       <InlineStack gap="100">
-                        <Text as="span" variant="bodySm" color="subdued">
+                        <Text as="span" variant="bodySm" tone="subdued">
                           Token: {trf.transfer_token.slice(0, 18)}...
                         </Text>
                         <Button

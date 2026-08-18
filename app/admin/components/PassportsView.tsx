@@ -247,7 +247,7 @@ export const PassportsView: React.FC<{ onPreviewPassport: (serial: string) => vo
                   <Text as="h2" variant="headingMd">
                     Batch CSV Passport Import
                   </Text>
-                  <Text as="p" variant="bodySm" color="subdued">
+                  <Text as="p" variant="bodySm" tone="subdued">
                     Stream large serial numbers and passport batches. Supported format: serial, title, edition, materials, location.
                   </Text>
                 </Box>
@@ -350,7 +350,7 @@ export const PassportsView: React.FC<{ onPreviewPassport: (serial: string) => vo
                     <div>
                       <InlineStack gap="200" blockAlign="center">
                         <Badge tone="success">ACTIVE</Badge>
-                        <Text as="span" variant="bodySm" color="subdued">
+                        <Text as="span" variant="bodySm" tone="subdued">
                           {passport.serial}
                         </Text>
                       </InlineStack>
@@ -358,12 +358,12 @@ export const PassportsView: React.FC<{ onPreviewPassport: (serial: string) => vo
                         <Text as="h3" variant="bodyMd" fontWeight="bold">
                           {passport.title}
                         </Text>
-                        <Text as="p" variant="bodySm" color="subdued">
+                        <Text as="p" variant="bodySm" tone="subdued">
                           {passport.description}
                         </Text>
                       </Box>
                       <Box paddingBlockStart="200">
-                        <Text as="p" variant="bodySm" color="subdued">
+                        <Text as="p" variant="bodySm" tone="subdued">
                           Edition: {piece?.edition_number ? `${piece.edition_number}/${piece.edition_total}` : 'Unique Piece'} • {passport.view_count} Public Views
                         </Text>
                       </Box>
@@ -395,10 +395,10 @@ export const PassportsView: React.FC<{ onPreviewPassport: (serial: string) => vo
                             Passport QR & NFC Tag
                           </Text>
                           <Box paddingBlockStart="200">
-                            <Text as="p" variant="bodySm" color="subdued">
+                            <Text as="p" variant="bodySm" tone="subdued">
                               Serial: {selectedQrSerial}
                             </Text>
-                            <Text as="p" variant="bodySm" color="subdued">
+                            <Text as="p" variant="bodySm" tone="subdued">
                               Resolver URI: /passport/{selectedQrSerial}
                             </Text>
                             <Text as="p" variant="bodySm">
@@ -421,7 +421,7 @@ export const PassportsView: React.FC<{ onPreviewPassport: (serial: string) => vo
                         <Box padding="600" alignment="center">
                           <InlineStack gap="200" blockAlign="center">
                             <Award width="16" height="16" />
-                            <Text as="p" variant="bodySm" color="success">
+                            <Text as="p" variant="bodySm" tone="success">
                               {currentTenant.settings.brand_name} Official Hallmark
                             </Text>
                           </InlineStack>
@@ -429,7 +429,7 @@ export const PassportsView: React.FC<{ onPreviewPassport: (serial: string) => vo
                             <Text as="h2" variant="headingMd">
                               Certificate of Authenticity
                             </Text>
-                            <Text as="p" variant="bodySm" color="subdued">
+                            <Text as="p" variant="bodySm" tone="subdued">
                               Permanent cryptographic identity verified in {currentTenant.settings.brand_name} Atelier registry.
                             </Text>
                           </Box>

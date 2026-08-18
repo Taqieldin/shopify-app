@@ -240,10 +240,10 @@ export const PhysicalPiecesView: React.FC = () => {
                 </Box>
 
                 <Box paddingBlockStart="400">
-                  <Text as="p" variant="bodyMd" fontWeight="bold" color="success">
+                  <Text as="p" variant="bodyMd" fontWeight="bold" tone="success">
                     {qrPiece.serial}
                   </Text>
-                  <Text as="p" variant="bodySm" color="subdued">
+                  <Text as="p" variant="bodySm" tone="subdued">
                     {qrPiece.product_title}
                   </Text>
                 </Box>
@@ -281,7 +281,7 @@ export const PhysicalPiecesView: React.FC = () => {
                   <Text as="h2" variant="headingMd">
                     Batch Import Serialized Pieces
                   </Text>
-                  <Text as="p" variant="bodySm" color="subdued">
+                  <Text as="p" variant="bodySm" tone="subdued">
                     Paste CSV data below. Headers: serial, product_title, edition_number, edition_total, location, color
                   </Text>
                 </Box>
@@ -362,6 +362,7 @@ export const PhysicalPiecesView: React.FC = () => {
                 autoComplete="off"
               />
               <Select
+                label="Status"
                 options={[
                   { label: 'All Statuses', value: 'ALL' },
                   { label: 'Registered', value: 'REGISTERED' },
@@ -390,7 +391,7 @@ export const PhysicalPiecesView: React.FC = () => {
                 <Badge tone={piece.status === 'REGISTERED' ? 'success' : piece.status === 'STOLEN' ? 'critical' : 'info'} key={piece.id}>
                   {piece.status}
                 </Badge>,
-                piece.active_owner ? piece.active_owner.name : <Text color="subdued">Unclaimed</Text>,
+                piece.active_owner ? piece.active_owner.name : <Text tone="subdued">Unclaimed</Text>,
                 <Button
                   key={`qr-${piece.id}`}
                   size="slim"

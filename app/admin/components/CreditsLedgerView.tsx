@@ -135,9 +135,9 @@ export const CreditsLedgerView: React.FC = () => {
                   <Text as="p" variant="bodySm">
                     Total In Circulation
                   </Text>
-                  <Text as="p" variant="heading2xl" color="success">
+                  <Text as="p" variant="heading2xl" tone="success">
                     {totalCirculation.toLocaleString()}{' '}
-                    <Text as="span" variant="bodySm" color="subdued">
+                    <Text as="span" variant="bodySm" tone="subdued">
                       {currentTenant.settings.credits_term}
                     </Text>
                   </Text>
@@ -149,7 +149,7 @@ export const CreditsLedgerView: React.FC = () => {
                       Ledger Invariants Verified
                     </Text>
                   </InlineStack>
-                  <Text as="p" variant="bodySm" color="subdued">
+                  <Text as="p" variant="bodySm" tone="subdued">
                     {creditEntries.length} Recorded Transactions
                   </Text>
                 </div>
@@ -169,7 +169,7 @@ export const CreditsLedgerView: React.FC = () => {
                 <Badge tone={entry.amount >= 0 ? 'success' : 'critical'} key={entry.id}>
                   {entry.type}
                 </Badge>,
-                <Text as="span" fontWeight="bold" color={entry.amount >= 0 ? 'success' : 'critical'} key={`amt-${entry.id}`}>
+                <Text as="span" fontWeight="bold" tone={entry.amount >= 0 ? 'success' : 'critical'} key={`amt-${entry.id}`}>
                   {entry.amount >= 0 ? `+${entry.amount}` : entry.amount}
                 </Text>,
                 entry.reason,

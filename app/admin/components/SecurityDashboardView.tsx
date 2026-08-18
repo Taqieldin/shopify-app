@@ -278,7 +278,7 @@ export function SecurityDashboardView() {
                     <Text as="p" variant="bodySm">
                       {selectedAlert.message}
                     </Text>
-                    <Text as="p" variant="bodySm" color="subdued">
+                    <Text as="p" variant="bodySm" tone="subdued">
                       Serial: {selectedAlert.serial}
                     </Text>
                   </Box>
@@ -371,7 +371,7 @@ export function SecurityDashboardView() {
                 <Text as="h2" variant="headingSm">
                   Critical Alerts
                 </Text>
-                <Text as="p" variant="heading2xl" color="critical">
+                <Text as="p" variant="heading2xl" tone="critical">
                   {criticalAlerts.length}
                 </Text>
               </Box>
@@ -427,7 +427,7 @@ export function SecurityDashboardView() {
                                 </Text>
                                 <Badge tone={getBadgeStatus(level)}>{level}</Badge>
                               </InlineStack>
-                              <Text as="span" variant="bodySm" color="subdued">
+                              <Text as="span" variant="bodySm" tone="subdued">
                                 {new Date(timestamp).toLocaleString()}
                               </Text>
                             </InlineStack>
@@ -435,7 +435,7 @@ export function SecurityDashboardView() {
                               <Text as="p" variant="bodySm">
                                 {message}
                               </Text>
-                              <Text as="p" variant="bodySm" color="subdued">
+                              <Text as="p" variant="bodySm" tone="subdued">
                                 Serial: {serial}
                               </Text>
                             </Box>
@@ -483,7 +483,7 @@ export function SecurityDashboardView() {
                               <Text as="p" variant="bodySm">
                                 Reason: {reason}
                               </Text>
-                              <Text as="p" variant="bodySm" color="subdued">
+                              <Text as="p" variant="bodySm" tone="subdued">
                                 Blocked by {blocked_by} on {new Date(blocked_at).toLocaleString()}
                               </Text>
                             </Box>

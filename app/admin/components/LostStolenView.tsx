@@ -137,7 +137,7 @@ export const LostStolenView: React.FC = () => {
                   <Text as="h3" variant="headingMd">
                     No Active Stolen or Flagged Pieces
                   </Text>
-                  <Text as="p" variant="bodySm" color="subdued">
+                  <Text as="p" variant="bodySm" tone="subdued">
                     All physical serial numbers for {currentTenant.settings.brand_name} are verified in good standing.
                   </Text>
                 </InlineStack>
@@ -152,7 +152,7 @@ export const LostStolenView: React.FC = () => {
                   <InlineStack align="space-between" blockAlign="center">
                     <InlineStack gap="200" blockAlign="center">
                       <Badge tone="critical">{piece.status}</Badge>
-                      <Text as="span" variant="bodyMd" fontWeight="bold" color="critical">
+                      <Text as="span" variant="bodyMd" fontWeight="bold" tone="critical">
                         {piece.serial}
                       </Text>
                       <Text as="span" variant="bodySm">
@@ -162,7 +162,7 @@ export const LostStolenView: React.FC = () => {
                     <Badge tone="critical">Fraud Alert Active</Badge>
                   </InlineStack>
                   <Box paddingBlockStart="100">
-                    <Text as="p" variant="bodySm" color="subdued">
+                    <Text as="p" variant="bodySm" tone="subdued">
                       Ownership Transfer: <strong>LOCKED</strong>
                     </Text>
                   </Box>

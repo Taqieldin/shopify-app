@@ -167,7 +167,7 @@ export const CareServicesView: React.FC = () => {
                 </InlineStack>
 
                 <Box paddingBlockStart="200">
-                  <Text as="p" variant="bodySm" color="subdued">
+                  <Text as="p" variant="bodySm" tone="subdued">
                     Serial: <strong>{srv.serial}</strong> • Technician: {srv.technician_name}
                   </Text>
                 </Box>
@@ -176,7 +176,7 @@ export const CareServicesView: React.FC = () => {
                   <Box padding="300" borderRadius="200" borderColor="border" borderWidth="100">
                     <Badge>Customer-Facing Updates</Badge>
                     <Box paddingBlockStart="100">
-                      <Text as="p" variant="bodySm" color="subdued">
+                      <Text as="p" variant="bodySm" tone="subdued">
                         "{srv.customer_notes}"
                       </Text>
                     </Box>
