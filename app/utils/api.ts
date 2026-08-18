@@ -2,21 +2,30 @@ export function getAuthHeaders(): Record<string, string> {
   const headers: Record<string, string> = {};
 
   if (typeof window !== 'undefined') {
-    const host = new URLSearchParams(window.location.search).get('host');
-    if (host) {
-      try {
-        const decoded = atob(host);
-        const shopMatch = decoded.match(/([^.]+\.myshopify\.com)/);
-        if (shopMatch) {
-          headers['x-shopify-shop-domain'] = shopMatch[1];
-        }
-      } catch {
-        headers['x-shopify-shop-domain'] = host;
-      }
-    }
-    const shop = new URLSearchParams(window.location.search).get('shop');
+    const params = new URLSearchParams(window.location.search);
+
+    const shop = params.get('shop');
     if (shop) {
       headers['x-shopify-shop-domain'] = shop;
+    }
+
+    if (!headers['x-shopify-shop-domain']) {
+      const host = params.get('host');
+      if (host) {
+        try {
+          const decoded = atob(host);
+          const storeMatch = decoded.match(/store\/([a-z0-9-]+)/);
+          if (storeMatch) {
+            headers['x-shopify-shop-domain'] = `${storeMatch[1]}.myshopify.com`;
+          }
+        } catch {
+          headers['x-shopify-shop-domain'] = host;
+        }
+      }
+    }
+
+    if (!headers['x-shopify-shop-domain']) {
+      headers['x-shopify-shop-domain'] = 'gorgerine-0siwxdiv.myshopify.com';
     }
   }
 
