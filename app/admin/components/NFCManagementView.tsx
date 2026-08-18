@@ -6,15 +6,15 @@ import {
   Card,
   DataTable,
   Button,
-  Modal,
-  TextField,
   Banner,
   Badge,
+  TextField,
   ButtonGroup,
   Thumbnail,
   Text,
   Box,
   Spinner,
+  InlineStack,
 } from '@shopify/polaris';
 import { Nfc } from 'lucide-react';
 
@@ -47,8 +47,8 @@ export function NFCManagementView() {
   const [pieces, setPieces] = useState<NFCTaggedPiece[]>([]);
   const [writeLogs, setWriteLogs] = useState<NFCWriteLog[]>([]);
   const [loading, setLoading] = useState(false);
-  const [modalActive, setModalActive] = useState(false);
-  const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [selectedPiece, setSelectedPiece] = useState('');
   const [nfcUid, setNfcUid] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -62,12 +62,8 @@ export function NFCManagementView() {
     try {
       const response = await authFetch('/api/admin/nfc/writes');
       const data = await response.json();
-      if (data.success) {
-        setWriteLogs(data.data);
-      }
-    } catch (err) {
-      // Non-fatal — the tag table is the primary view
-    }
+      if (data.success) setWriteLogs(data.data);
+    } catch (err) { /* Non-fatal */ }
   };
 
   const loadNFCPieces = async () => {
@@ -75,9 +71,7 @@ export function NFCManagementView() {
     try {
       const response = await authFetch('/api/admin/nfc');
       const data = await response.json();
-      if (data.success) {
-        setPieces(data.data);
-      }
+      if (data.success) setPieces(data.data);
     } catch (err) {
       setError('Failed to load NFC-tagged pieces');
     } finally {
@@ -87,25 +81,20 @@ export function NFCManagementView() {
 
   const handleRegisterNFC = async () => {
     if (!selectedPiece || !nfcUid) return;
-
     setLoading(true);
     setError(null);
     try {
       const response = await authFetch('/api/admin/nfc/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          physical_piece_id: selectedPiece,
-          nfc_uid: nfcUid,
-        }),
+        body: JSON.stringify({ physical_piece_id: selectedPiece, nfc_uid: nfcUid }),
       });
-
       const data = await response.json();
       if (data.success) {
         setSuccess('NFC tag registered successfully');
-        setModalActive(false);
+        setFormOpen(false);
         setNfcUid('');
-        setSelectedPiece(null);
+        setSelectedPiece('');
         loadNFCPieces();
       } else {
         setError(data.error || 'Failed to register NFC tag');
@@ -119,13 +108,9 @@ export function NFCManagementView() {
 
   const handleUnregisterNFC = async (pieceId: string) => {
     if (!confirm('Remove NFC tag from this piece?')) return;
-
     setLoading(true);
     try {
-      const response = await authFetch(`/api/admin/nfc/${pieceId}`, {
-        method: 'DELETE',
-      });
-
+      const response = await authFetch(`/api/admin/nfc/${pieceId}`, { method: 'DELETE' });
       const data = await response.json();
       if (data.success) {
         setSuccess('NFC tag removed');
@@ -151,7 +136,7 @@ export function NFCManagementView() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      setError(`Failed to download QR code`);
+      setError('Failed to download QR code');
     }
   };
 
@@ -164,11 +149,7 @@ export function NFCManagementView() {
   };
 
   const rows = pieces.map((piece) => [
-    <Thumbnail
-      source={piece.product_ref.image_url || ''}
-      alt={piece.product_ref.title}
-      size="small"
-    />,
+    <Thumbnail source={piece.product_ref.image_url || ''} alt={piece.product_ref.title} size="small" />,
     piece.serial,
     piece.product_ref.title,
     <code style={{ fontSize: '0.9em', background: '#f4f4f4', padding: '2px 6px', borderRadius: '3px' }}>
@@ -178,83 +159,68 @@ export function NFCManagementView() {
       {piece.passport?.status || 'NO_PASSPORT'}
     </Badge>,
     <ButtonGroup>
-      <Button size="slim" onClick={() => handleDownloadQR(piece.serial, 'png')}>
-        QR PNG
-      </Button>
-      <Button size="slim" onClick={() => handleDownloadQR(piece.serial, 'svg')}>
-        QR SVG
-      </Button>
-      <Button size="slim" onClick={() => handleDownloadLabel(piece.serial)}>
-        Label
-      </Button>
-      <Button
-        size="slim"
-        tone="critical"
-        onClick={() => handleUnregisterNFC(piece.id)}
-      >
-        Remove NFC
-      </Button>
+      <Button size="slim" onClick={() => handleDownloadQR(piece.serial, 'png')}>QR PNG</Button>
+      <Button size="slim" onClick={() => handleDownloadQR(piece.serial, 'svg')}>QR SVG</Button>
+      <Button size="slim" onClick={() => handleDownloadLabel(piece.serial)}>Label</Button>
+      <Button size="slim" tone="critical" onClick={() => handleUnregisterNFC(piece.id)}>Remove</Button>
     </ButtonGroup>,
   ]);
 
   return (
-    <Page
-      title="NFC Tag Management"
-      primaryAction={{
-        content: 'Register NFC Tag',
-        onAction: () => setModalActive(true),
-      }}
-      secondaryActions={[
-        {
-          content: 'Bulk Register',
-          onAction: () => {
-            // TODO: Implement bulk upload modal
-            alert('Bulk upload coming soon');
-          },
-        },
-      ]}
-    >
+    <Page title="NFC Tag Management">
       <Layout>
         {error && (
           <Layout.Section>
-            <Banner tone="critical" onDismiss={() => setError(null)}>
-              {error}
-            </Banner>
+            <Banner tone="critical" onDismiss={() => setError(null)}>{error}</Banner>
           </Layout.Section>
         )}
-
         {success && (
           <Layout.Section>
-            <Banner tone="success" onDismiss={() => setSuccess(null)}>
-              {success}
-            </Banner>
+            <Banner tone="success" onDismiss={() => setSuccess(null)}>{success}</Banner>
           </Layout.Section>
         )}
 
         <Layout.Section>
           <Card>
-            {loading ? (
-              <Box padding="400">
-                <div className="flex items-center justify-center py-12">
-                  <Spinner size="large" />
-                </div>
-              </Box>
-            ) : pieces.length === 0 ? (
+            {loading && !formOpen ? (
+              <Box padding="400"><div className="flex items-center justify-center py-12"><Spinner size="large" /></div></Box>
+            ) : pieces.length === 0 && !formOpen ? (
               <div className="flex flex-col items-center justify-center py-12 gap-3">
                 <Nfc className="w-10 h-10 text-zinc-600" />
-                <Text as="p" variant="bodyMd" alignment="center" tone="subdued">
-                  No NFC-tagged pieces yet
-                </Text>
-                <Text as="p" variant="bodySm" alignment="center" tone="subdued">
-                  Register an NFC tag to link it with a physical piece for tap-to-verify authentication.
-                </Text>
+                <Text as="p" variant="bodyMd" alignment="center" tone="subdued">No NFC-tagged pieces yet</Text>
+                <Text as="p" variant="bodySm" alignment="center" tone="subdued">Register an NFC tag to link it with a physical piece.</Text>
+                <Button onClick={() => setFormOpen(true)}>Register NFC Tag</Button>
               </div>
             ) : (
-              <DataTable
-                columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
-                headings={['Image', 'Serial', 'Product', 'NFC UID', 'Status', 'Actions']}
-                rows={rows}
-              />
+              <>
+                <Box padding="400">
+                  <InlineStack align="space-between">
+                    <Text as="h3" variant="headingMd">NFC-Tagged Pieces</Text>
+                    <Button onClick={() => setFormOpen(!formOpen)}>{formOpen ? 'Cancel' : 'Register NFC Tag'}</Button>
+                  </InlineStack>
+                </Box>
+                {formOpen && (
+                  <Box padding="400" paddingBlockEnd="400">
+                    <Card padding="400">
+                      <Text as="h4" variant="headingSm" paddingBlockEnd="200">Register New NFC Tag</Text>
+                      <InlineStack gap="200" blockAlign="end" wrap={false}>
+                        <div style={{ flex: 1 }}>
+                          <TextField label="Physical Piece ID" value={selectedPiece} onChange={setSelectedPiece} placeholder="Enter piece UUID" autoComplete="off" />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <TextField label="NFC UID" value={nfcUid} onChange={setNfcUid} placeholder="04ABC123DEF456" autoComplete="off" />
+                        </div>
+                        <Button onClick={handleRegisterNFC} loading={loading} disabled={!selectedPiece || !nfcUid}>Register</Button>
+                      </InlineStack>
+                    </Card>
+                  </Box>
+                )}
+                <DataTable
+                  columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
+                  headings={['Image', 'Serial', 'Product', 'NFC UID', 'Status', 'Actions']}
+                  rows={rows}
+                />
+              </>
             )}
           </Card>
         </Layout.Section>
@@ -262,100 +228,40 @@ export function NFCManagementView() {
         <Layout.Section>
           <Card>
             <Box padding="400">
-              <Text as="h3" variant="headingMd">
-                NFC Owner Write-Back Log
-              </Text>
+              <Text as="h3" variant="headingMd">NFC Owner Write-Back Log</Text>
               <Text as="p" variant="bodySm" tone="subdued">
-                Every ownership change on an NFC-tagged piece writes the new owner into the tag payload (AES-256-GCM encrypted). Scans can then prove the current registered owner even offline.
+                Every ownership change writes the new owner into the tag payload (AES-256-GCM encrypted).
               </Text>
             </Box>
             <DataTable
-                columnContentTypes={['text', 'text', 'text', 'text', 'text']}
-                headings={['Piece', 'New Owner', 'Transfer #', 'Algorithm', 'Written At']}
-                rows={writeLogs.map((log) => [
-                  <div key={log.id}>
-                    <Text as="span" variant="bodyMd" fontWeight="semibold">
-                      {log.physical_piece.product_ref.title}
-                    </Text>
-                    <Text as="p" variant="bodySm" tone="subdued">
-                      {log.physical_piece.serial}
-                    </Text>
-                  </div>,
-                  <Text as="span" key="owner" variant="bodyMd">
-                    {log.new_owner.email}
-                  </Text>,
-                  <Text as="span" key="count" variant="bodyMd">
-                    {log.transfer_count}
-                  </Text>,
-                  <Badge key="algo" tone="info">
-                    {log.algorithm}
-                  </Badge>,
-                  <Text as="span" key="when" variant="bodyMd">
-                    {new Date(log.created_at).toLocaleString()}
-                  </Text>,
-                ])}
-              />
-            </Card>
-          </Layout.Section>
+              columnContentTypes={['text', 'text', 'text', 'text', 'text']}
+              headings={['Piece', 'New Owner', 'Transfer #', 'Algorithm', 'Written At']}
+              rows={writeLogs.map((log) => [
+                <div key={log.id}>
+                  <Text as="span" variant="bodyMd" fontWeight="semibold">{log.physical_piece.product_ref.title}</Text>
+                  <Text as="p" variant="bodySm" tone="subdued">{log.physical_piece.serial}</Text>
+                </div>,
+                <Text as="span" key="owner" variant="bodyMd">{log.new_owner.email}</Text>,
+                <Text as="span" key="count" variant="bodyMd">{log.transfer_count}</Text>,
+                <Badge key="algo" tone="info">{log.algorithm}</Badge>,
+                <Text as="span" key="when" variant="bodyMd">{new Date(log.created_at).toLocaleString()}</Text>,
+              ])}
+            />
+          </Card>
+        </Layout.Section>
 
         <Layout.Section>
           <Card padding="400">
-            <Text as="h3" variant="headingMd">
-              About NFC Tags
+            <Text as="h3" variant="headingMd">About NFC Tags</Text>
+            <Text as="p" variant="bodyMd">
+              NFC tags allow customers to tap their smartphone against a product to instantly verify authenticity and view the digital passport.
             </Text>
-            <p>
-              NFC (Near Field Communication) tags allow customers to tap their smartphone
-              against a product to instantly verify authenticity and view the digital passport.
-            </p>
-            <br />
-            <p>
+            <Text as="p" variant="bodyMd" paddingBlockStart="200">
               <strong>Supported tags:</strong> NTAG424 DNA, NTAG213, NTAG215, NTAG216
-            </p>
-            <br />
-            <p>
-              <strong>Note:</strong> NFC UIDs should be paired with cryptographic verification
-              for high-security applications.
-            </p>
+            </Text>
           </Card>
         </Layout.Section>
       </Layout>
-
-      <Modal
-        open={modalActive}
-        onClose={() => setModalActive(false)}
-        title="Register NFC Tag"
-        primaryAction={{
-          content: 'Register',
-          onAction: handleRegisterNFC,
-          loading,
-        }}
-        secondaryActions={[
-          {
-            content: 'Cancel',
-            onAction: () => setModalActive(false),
-          },
-        ]}
-      >
-        <Modal.Section>
-          <TextField
-            label="Physical Piece ID"
-            value={selectedPiece || ''}
-            onChange={setSelectedPiece}
-            placeholder="Enter piece UUID"
-            autoComplete="off"
-            helpText="The UUID of the physical piece to link the NFC tag to"
-          />
-          <br />
-          <TextField
-            label="NFC UID"
-            value={nfcUid}
-            onChange={setNfcUid}
-            placeholder="04ABC123DEF456"
-            autoComplete="off"
-            helpText="The unique identifier from the NFC tag (hex format)"
-          />
-        </Modal.Section>
-      </Modal>
     </Page>
   );
 }
