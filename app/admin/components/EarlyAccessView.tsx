@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '../../context/TenantContext';
+import { authFetch } from '../../utils/api';
 import { Flame, Plus, Clock, Crown, Sparkles, CheckCircle2, Lock, Tag } from 'lucide-react';
 
 export const EarlyAccessView: React.FC = () => {
@@ -11,7 +12,7 @@ export const EarlyAccessView: React.FC = () => {
   const [newStartDate, setNewStartDate] = useState('');
 
   useEffect(() => {
-    fetch('/api/admin/early-access')
+    authFetch('/api/admin/early-access')
       .then((res) => res.json())
       .then((data) => setRules(data.rules ?? data ?? []))
       .catch(() => setRules([]));

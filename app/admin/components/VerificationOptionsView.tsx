@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { authFetch } from '../../utils/api';
 import {
   Page,
   Layout,
@@ -38,7 +39,7 @@ export function VerificationOptionsView() {
   const loadProducts = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/verification-options');
+      const response = await authFetch('/api/admin/verification-options');
       const data = await response.json();
       if (data.success) {
         setProducts(data.data);
@@ -80,7 +81,7 @@ export function VerificationOptionsView() {
     setError(null);
     setSuccess(null);
     try {
-      const response = await fetch(`/api/admin/verification-options/${product.id}`, {
+      const response = await authFetch(`/api/admin/verification-options/${product.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ methods: drafts[product.id] }),

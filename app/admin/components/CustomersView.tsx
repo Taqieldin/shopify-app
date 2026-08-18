@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '../../context/TenantContext';
+import { authFetch } from '../../utils/api';
 import { Users, Crown, Coins, Tag, Search, ShieldCheck, Mail, ArrowRight } from 'lucide-react';
 
 export const CustomersView: React.FC = () => {
@@ -8,7 +9,7 @@ export const CustomersView: React.FC = () => {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    fetch('/api/admin/customers')
+    authFetch('/api/admin/customers')
       .then((res) => res.json())
       .then((data) => setCustomers(data.customers ?? data ?? []))
       .catch(() => setCustomers([]));

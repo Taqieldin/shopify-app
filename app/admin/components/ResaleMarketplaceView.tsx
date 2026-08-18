@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { authFetch } from '../../utils/api';
 import {
   Page,
   Layout,
@@ -41,7 +42,7 @@ export function ResaleMarketplaceView() {
   const loadListings = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/resale');
+      const response = await authFetch('/api/admin/resale');
       const data = await response.json();
       if (data.success) {
         setListings(data.data);
@@ -60,7 +61,7 @@ export function ResaleMarketplaceView() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/admin/resale/${listingId}/cancel`, {
+      const response = await authFetch(`/api/admin/resale/${listingId}/cancel`, {
         method: 'POST',
       });
       const data = await response.json();

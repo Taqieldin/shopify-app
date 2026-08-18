@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { authFetch } from '../../utils/api';
 import {
   Card,
   Page,
@@ -70,12 +71,12 @@ export function SecurityDashboardView() {
     try {
       if (selectedTab === 0) {
         // Load alerts
-        const response = await fetch('/api/admin/security/alerts?limit=100');
+        const response = await authFetch('/api/admin/security/alerts?limit=100');
         const data = await response.json();
         setAlerts(data.data || []);
       } else if (selectedTab === 1) {
         // Load blocked NFCs
-        const response = await fetch('/api/admin/security/blocked-nfc');
+        const response = await authFetch('/api/admin/security/blocked-nfc');
         const data = await response.json();
         setBlockedNFCs(data.data || []);
       }
@@ -88,7 +89,7 @@ export function SecurityDashboardView() {
 
   async function handleBlockNFC() {
     try {
-      const response = await fetch('/api/admin/security/block-nfc', {
+      const response = await authFetch('/api/admin/security/block-nfc', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -110,7 +111,7 @@ export function SecurityDashboardView() {
 
   async function handleUnblockNFC(nfcUid: string) {
     try {
-      const response = await fetch(`/api/admin/security/blocked-nfc/${encodeURIComponent(nfcUid)}`, {
+      const response = await authFetch(`/api/admin/security/blocked-nfc/${encodeURIComponent(nfcUid)}`, {
         method: 'DELETE',
       });
 

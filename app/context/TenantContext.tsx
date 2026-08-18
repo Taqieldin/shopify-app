@@ -151,9 +151,37 @@ interface TenantContextType {
 // API helpers
 // ---------------------------------------------------------------------------
 
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+
+  // Extract shop domain from App Bridge host param
+  if (typeof window !== 'undefined') {
+    const host = new URLSearchParams(window.location.search).get('host');
+    if (host) {
+      try {
+        const decoded = atob(host);
+        const shopMatch = decoded.match(/([^.]+\.myshopify\.com)/);
+        if (shopMatch) {
+          headers['x-shopify-shop-domain'] = shopMatch[1];
+        }
+      } catch {
+        // fallback: host might already be the shop domain
+        headers['x-shopify-shop-domain'] = host;
+      }
+    }
+    const shop = new URLSearchParams(window.location.search).get('shop');
+    if (shop) {
+      headers['x-shopify-shop-domain'] = shop;
+    }
+  }
+
+  headers['x-user-role'] = 'MERCHANT_OWNER';
+  return headers;
+}
+
 async function apiGet<T>(path: string): Promise<T | null> {
   try {
-    const res = await fetch(path);
+    const res = await fetch(path, { headers: getAuthHeaders() });
     const json = await res.json();
     if (json.success === false) {
       console.error(`[API] GET ${path} failed:`, json.error);
@@ -170,7 +198,7 @@ async function apiPost<T>(path: string, body: unknown): Promise<T | null> {
   try {
     const res = await fetch(path, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify(body),
     });
     const json = await res.json();
@@ -189,7 +217,7 @@ async function apiPatch<T>(path: string, body: unknown): Promise<T | null> {
   try {
     const res = await fetch(path, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify(body),
     });
     const json = await res.json();

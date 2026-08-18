@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '../../context/TenantContext';
+import { authFetch } from '../../utils/api';
 import { ShieldCheck, Clock, CheckCircle2, AlertTriangle, User, Search, Tag } from 'lucide-react';
 
 export const WarrantiesView: React.FC = () => {
@@ -8,7 +9,7 @@ export const WarrantiesView: React.FC = () => {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    fetch('/api/admin/services')
+    authFetch('/api/admin/services')
       .then((res) => res.json())
       .then((data) => setWarranties(data.warranties ?? data ?? []))
       .catch(() => setWarranties([]));

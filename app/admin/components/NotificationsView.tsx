@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '../../context/TenantContext';
+import { authFetch } from '../../utils/api';
 import { Mail, Send, CheckCircle2, Clock, AlertCircle, Sparkles, User, Tag } from 'lucide-react';
 
 export const NotificationsView: React.FC = () => {
@@ -8,7 +9,7 @@ export const NotificationsView: React.FC = () => {
   const [filter, setFilter] = useState<string>('ALL');
 
   useEffect(() => {
-    fetch('/api/admin/notifications')
+    authFetch('/api/admin/notifications')
       .then((res) => res.json())
       .then((data) => setNotifications(data.notifications ?? data ?? []))
       .catch(() => setNotifications([]));

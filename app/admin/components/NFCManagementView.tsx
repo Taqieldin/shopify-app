@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { authFetch } from '../../utils/api';
 import {
   Page,
   Layout,
@@ -57,7 +58,7 @@ export function NFCManagementView() {
 
   const loadWriteLogs = async () => {
     try {
-      const response = await fetch('/api/admin/nfc/writes');
+      const response = await authFetch('/api/admin/nfc/writes');
       const data = await response.json();
       if (data.success) {
         setWriteLogs(data.data);
@@ -70,7 +71,7 @@ export function NFCManagementView() {
   const loadNFCPieces = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/nfc');
+      const response = await authFetch('/api/admin/nfc');
       const data = await response.json();
       if (data.success) {
         setPieces(data.data);
@@ -88,7 +89,7 @@ export function NFCManagementView() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/admin/nfc/register', {
+      const response = await authFetch('/api/admin/nfc/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -119,7 +120,7 @@ export function NFCManagementView() {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/admin/nfc/${pieceId}`, {
+      const response = await authFetch(`/api/admin/nfc/${pieceId}`, {
         method: 'DELETE',
       });
 
@@ -137,7 +138,7 @@ export function NFCManagementView() {
 
   const handleDownloadQR = async (serial: string, format: 'png' | 'svg') => {
     try {
-      const response = await fetch(`/api/admin/qr/${serial}/${format}`);
+      const response = await authFetch(`/api/admin/qr/${serial}/${format}`);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');

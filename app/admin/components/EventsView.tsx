@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { authFetch } from '../../utils/api';
 import {
   Page,
   Layout,
@@ -55,7 +56,7 @@ export function EventsView() {
   const loadEvents = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/events');
+      const response = await authFetch('/api/admin/events');
       const data = await response.json();
       if (data.success) {
         setEvents(data.data);
@@ -77,7 +78,7 @@ export function EventsView() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/admin/events', {
+      const response = await authFetch('/api/admin/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -114,7 +115,7 @@ export function EventsView() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/admin/events/${eventId}/status`, {
+      const response = await authFetch(`/api/admin/events/${eventId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
@@ -138,7 +139,7 @@ export function EventsView() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/admin/events/${checkInEvent.id}/check-in`, {
+      const response = await authFetch(`/api/admin/events/${checkInEvent.id}/check-in`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
