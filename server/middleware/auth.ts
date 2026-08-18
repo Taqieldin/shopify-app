@@ -1,40 +1,17 @@
-import { Response, NextFunction } from 'express';
-import { ForbiddenError, UnauthorizedError } from '../shared/errors/index.js';
-import { TenantRequest } from './tenant.js';
-import { UserRole } from '../shared/types/index.js';
+import { Request, Response, NextFunction } from 'express';
 
-export interface AuthenticatedRequest extends TenantRequest {
-  userRole?: UserRole;
-  actorId?: string;
-}
+export function authMiddleware(req: Request, res: Response, next: NextFunction) {
+  const shop = req.headers['x-shopify-shop-domain'] as string;
+  const role = req.headers['x-user-role'] as string;
 
-export function requireRole(...allowedRoles: UserRole[]) {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    const headerRole = req.headers['x-user-role'] as UserRole | undefined;
-
-    if (process.env.NODE_ENV === 'production') {
-      if (!headerRole) {
-        return next(new UnauthorizedError('Missing role. Authenticate before accessing admin routes.'));
-      }
-      req.userRole = headerRole;
-      req.actorId = (req.headers['x-actor-id'] as string) || 'unknown';
-      if (allowedRoles.length > 0 && !allowedRoles.includes(headerRole)) {
-        return next(new ForbiddenError(`Operation requires one of roles: ${allowedRoles.join(', ')}`));
-      }
-      return next();
+  if (process.env.NODE_ENV === 'production') {
+    if (!shop) {
+      return res.status(401).json({ success: false, error: 'Missing shop domain' });
     }
-
-    // In local dev/demo mode, default to MERCHANT_ADMIN for admin routes
-    const role: UserRole = headerRole || 'MERCHANT_ADMIN';
-    const actorId = (req.headers['x-actor-id'] as string) || 'merchant_admin_01';
-
-    req.userRole = role;
-    req.actorId = actorId;
-
-    if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
-      return next(new ForbiddenError(`Operation requires one of roles: ${allowedRoles.join(', ')}`));
+    if (role !== 'MERCHANT_OWNER') {
+      return res.status(403).json({ success: false, error: 'Forbidden' });
     }
+  }
 
-    next();
-  };
+  next();
 }

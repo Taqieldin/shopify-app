@@ -1,7 +1,0 @@
-name = "Digital Product Identity"
-type = "theme"
-handle = "digital-product-identity"
-uid = "8d2d84ac-442a-eb12-6321-d91ff072497e136c07c3"
-
-[targeting]
-target = "sections"

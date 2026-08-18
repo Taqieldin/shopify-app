@@ -1,72 +1,38 @@
 import 'dotenv/config';
 import express from 'express';
-import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { publicRouter } from './routes/public.routes.js';
-import { customerRouter } from './routes/customer.routes.js';
-import { adminRouter } from './routes/admin.routes.js';
-import { webhookRouter } from './routes/webhook.routes.js';
-import { authRouter } from './routes/auth.routes.js';
-import { errorHandler } from './middleware/error-handler.js';
+import { authMiddleware } from './middleware/auth.js';
+import productsRouter from './routes/products.routes.js';
+import tagsRouter from './routes/tags.routes.js';
+import servicesRouter from './routes/services.routes.js';
+import passportRouter from './routes/passport.routes.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = Number(process.env.PORT) || 3001;
 
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    service: 'shopify-digital-passport-saas',
-  });
+app.use((_req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, x-shopify-shop-domain, x-user-role');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+  if (_req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
 });
 
-// Debug endpoint (production only — shows what headers the server receives)
-app.get('/api/admin/debug-headers', (req, res) => {
-  res.json({
-    receivedHeaders: {
-      'x-shopify-shop-domain': req.headers['x-shopify-shop-domain'] || null,
-      'x-user-role': req.headers['x-user-role'] || null,
-      'x-actor-id': req.headers['x-actor-id'] || null,
-      'x-shop-domain': req.headers['x-shop-domain'] || null,
-    },
-    allHeaders: req.headers,
-    query: req.query,
-    url: req.url,
-    method: req.method,
-    nodeEnv: process.env.NODE_ENV,
-  });
+app.use('/api/admin', authMiddleware, productsRouter);
+app.use('/api/admin/tags', authMiddleware, tagsRouter);
+app.use('/api/admin/services', authMiddleware, servicesRouter);
+app.use('/api/passport', passportRouter);
+
+const distPath = path.resolve(__dirname, '../dist');
+app.use(express.static(distPath));
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
-// Domain API routes
-app.use('/api/auth', authRouter);
-app.use('/api/public', publicRouter);
-app.use('/api/customer', customerRouter);
-app.use('/api/admin', adminRouter);
-app.use('/api/webhooks', webhookRouter);
-
-// Serve static frontend in production
-if (process.env.NODE_ENV === 'production') {
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const distPath = path.resolve(__dirname, '../dist');
-  app.use(express.static(distPath));
-  app.get('{*splat}', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
-  });
-}
-
-// Centralized error handling
-app.use(errorHandler);
-
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`✨ Shopify Digital Passport SaaS Backend running on http://localhost:${PORT}`);
-  });
-}
-
-export default app;
+app.listen(PORT, () => {
+  console.log(`[Gorgerine] Server running on port ${PORT}`);
+});
