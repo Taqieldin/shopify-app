@@ -11,7 +11,10 @@ import {
   Text,
   Thumbnail,
   InlineStack,
+  Spinner,
+  Box,
 } from '@shopify/polaris';
+import { Store } from 'lucide-react';
 
 interface AdminResaleListing {
   id: string;
@@ -138,11 +141,29 @@ export function ResaleMarketplaceView() {
             </Banner>
           )}
           <Card>
-            <DataTable
-              columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
-              headings={['Piece', 'Price', 'Seller', 'Buyer', 'Status', '']}
-              rows={rows}
-            />
+            {loading ? (
+              <Box padding="400">
+                <div className="flex items-center justify-center py-12">
+                  <Spinner size="large" />
+                </div>
+              </Box>
+            ) : listings.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Store className="w-10 h-10 text-zinc-600" />
+                <Text as="p" variant="bodyMd" alignment="center" tone="subdued">
+                  No marketplace listings yet
+                </Text>
+                <Text as="p" variant="bodySm" alignment="center" tone="subdued">
+                  Listings appear here when collectors list pieces for resale through the Private Club.
+                </Text>
+              </div>
+            ) : (
+              <DataTable
+                columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
+                headings={['Piece', 'Price', 'Seller', 'Buyer', 'Status', '']}
+                rows={rows}
+              />
+            )}
           </Card>
         </Layout.Section>
       </Layout>

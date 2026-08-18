@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AppBridgeProvider } from './providers/AppBridgeProvider';
 import { TenantProvider } from './context/TenantContext';
 import { AdminLayout } from './admin/components/AdminLayout';
@@ -28,24 +28,56 @@ import { PassportPage } from './public/passport/PassportPage';
 import { CustomerClubView } from './customer/CustomerClubView';
 import { GiftClaimPage } from './public/gift/GiftClaimPage';
 
-export const App: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState('dashboard');
-  const [viewingSerial, setViewingSerial] = useState<string | null>(null);
+const VALID_TABS = [
+  'dashboard', 'passports', 'pieces', 'transfers', 'authentication',
+  'verification-options', 'nfc', 'club', 'events', 'resale',
+  'credits', 'early-access', 'services', 'warranties', 'customers',
+  'lost-stolen', 'communications', 'billing', 'analytics', 'settings',
+  'audit', 'customer-portal', 'gift-experience', 'security',
+];
 
-  const handleNavigate = (tab: string) => {
+function getTabFromHash(): string {
+  if (typeof window === 'undefined') return 'dashboard';
+  const hash = window.location.hash.replace(/^#\/?/, '');
+  if (hash.startsWith('passport-')) return 'public-passport';
+  if (VALID_TABS.includes(hash)) return hash;
+  return 'dashboard';
+}
+
+function getSerialFromHash(): string | null {
+  if (typeof window === 'undefined') return null;
+  const hash = window.location.hash.replace(/^#\/?/, '');
+  if (hash.startsWith('passport-')) return hash.replace('passport-', '');
+  return null;
+}
+
+export const App: React.FC = () => {
+  const [currentTab, setCurrentTab] = useState(() => getTabFromHash());
+  const [viewingSerial, setViewingSerial] = useState<string | null>(() => getSerialFromHash());
+
+  useEffect(() => {
+    function onHashChange() {
+      const tab = getTabFromHash();
+      const serial = getSerialFromHash();
+      setCurrentTab(tab);
+      setViewingSerial(serial);
+    }
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  const navigateTo = useCallback((tab: string) => {
     if (tab.startsWith('public-passport-')) {
       const serial = tab.replace('public-passport-', '');
-      setViewingSerial(serial);
-      setCurrentTab('public-passport');
+      window.location.hash = `passport-${serial}`;
     } else {
-      setCurrentTab(tab);
+      window.location.hash = tab;
     }
-  };
+  }, []);
 
-  const handleOpenPassport = (serial: string) => {
-    setViewingSerial(serial);
-    setCurrentTab('public-passport');
-  };
+  const handleOpenPassport = useCallback((serial: string) => {
+    window.location.hash = `passport-${serial}`;
+  }, []);
 
   return (
     <AppBridgeProvider>
@@ -53,18 +85,18 @@ export const App: React.FC = () => {
         {currentTab === 'public-passport' && viewingSerial ? (
           <PassportPage
             serial={viewingSerial}
-            onBackToAdmin={() => setCurrentTab('dashboard')}
+            onBackToAdmin={() => { window.location.hash = 'dashboard'; }}
           />
         ) : currentTab === 'customer-portal' ? (
           <CustomerClubView
-            onBackToAdmin={() => setCurrentTab('dashboard')}
+            onBackToAdmin={() => { window.location.hash = 'dashboard'; }}
             onOpenPassport={handleOpenPassport}
           />
         ) : currentTab === 'gift-experience' ? (
-          <GiftClaimPage onBackToAdmin={() => setCurrentTab('dashboard')} />
+          <GiftClaimPage onBackToAdmin={() => { window.location.hash = 'dashboard'; }} />
         ) : (
-          <AdminLayout currentTab={currentTab} onSelectTab={handleNavigate}>
-            {currentTab === 'dashboard' && <DashboardView onNavigate={handleNavigate} />}
+          <AdminLayout currentTab={currentTab} onSelectTab={navigateTo}>
+            {currentTab === 'dashboard' && <DashboardView onNavigate={navigateTo} />}
             {currentTab === 'passports' && <PassportsView onPreviewPassport={handleOpenPassport} />}
             {currentTab === 'pieces' && <PhysicalPiecesView />}
             {currentTab === 'transfers' && <TransfersView />}

@@ -14,7 +14,9 @@ import {
   Thumbnail,
   Text,
   Box,
+  Spinner,
 } from '@shopify/polaris';
+import { Nfc } from 'lucide-react';
 
 interface NFCTaggedPiece {
   id: string;
@@ -231,11 +233,29 @@ export function NFCManagementView() {
 
         <Layout.Section>
           <Card>
-            <DataTable
-              columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
-              headings={['Image', 'Serial', 'Product', 'NFC UID', 'Status', 'Actions']}
-              rows={rows}
-            />
+            {loading ? (
+              <Box padding="400">
+                <div className="flex items-center justify-center py-12">
+                  <Spinner size="large" />
+                </div>
+              </Box>
+            ) : pieces.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Nfc className="w-10 h-10 text-zinc-600" />
+                <Text as="p" variant="bodyMd" alignment="center" tone="subdued">
+                  No NFC-tagged pieces yet
+                </Text>
+                <Text as="p" variant="bodySm" alignment="center" tone="subdued">
+                  Register an NFC tag to link it with a physical piece for tap-to-verify authentication.
+                </Text>
+              </div>
+            ) : (
+              <DataTable
+                columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
+                headings={['Image', 'Serial', 'Product', 'NFC UID', 'Status', 'Actions']}
+                rows={rows}
+              />
+            )}
           </Card>
         </Layout.Section>
 

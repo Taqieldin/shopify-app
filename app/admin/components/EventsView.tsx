@@ -14,7 +14,9 @@ import {
   InlineStack,
   ButtonGroup,
   Box,
+  Spinner,
 } from '@shopify/polaris';
+import { CalendarDays } from 'lucide-react';
 
 type EventStatus = 'SCHEDULED' | 'LIVE' | 'ENDED' | 'CANCELLED';
 
@@ -235,11 +237,29 @@ export function EventsView() {
                 <Button onClick={() => setCreateOpen(true)}>Create Event</Button>
               </InlineStack>
             </Box>
-            <DataTable
-              columnContentTypes={['text', 'text', 'text', 'numeric', 'numeric', 'text']}
-              headings={['Event', 'When', 'Status', 'Credits', 'Checked In', 'Actions']}
-              rows={rows}
-            />
+            {loading ? (
+              <Box padding="400">
+                <div className="flex items-center justify-center py-12">
+                  <Spinner size="large" />
+                </div>
+              </Box>
+            ) : events.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <CalendarDays className="w-10 h-10 text-zinc-600" />
+                <Text as="p" variant="bodyMd" alignment="center" tone="subdued">
+                  No club events yet
+                </Text>
+                <Text as="p" variant="bodySm" alignment="center" tone="subdued">
+                  Create your first event to start engaging collectors with exclusive experiences.
+                </Text>
+              </div>
+            ) : (
+              <DataTable
+                columnContentTypes={['text', 'text', 'text', 'numeric', 'numeric', 'text']}
+                headings={['Event', 'When', 'Status', 'Credits', 'Checked In', 'Actions']}
+                rows={rows}
+              />
+            )}
           </Card>
         </Layout.Section>
       </Layout>

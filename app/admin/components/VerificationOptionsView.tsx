@@ -11,7 +11,10 @@ import {
   Checkbox,
   InlineStack,
   Text,
+  Spinner,
+  Box,
 } from '@shopify/polaris';
+import { SlidersHorizontal } from 'lucide-react';
 
 type Method = 'NFC' | 'QR' | 'SERIAL_LOOKUP' | 'MANUAL';
 
@@ -153,11 +156,29 @@ export function VerificationOptionsView() {
             </Banner>
           )}
           <Card>
-            <DataTable
-              columnContentTypes={['text', 'numeric', 'text', 'text']}
-              headings={['Product', 'Pieces', 'Verification Methods', '']}
-              rows={rows}
-            />
+            {loading ? (
+              <Box padding="400">
+                <div className="flex items-center justify-center py-12">
+                  <Spinner size="large" />
+                </div>
+              </Box>
+            ) : products.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <SlidersHorizontal className="w-10 h-10 text-zinc-600" />
+                <Text as="p" variant="bodyMd" alignment="center" tone="subdued">
+                  No products with verification options
+                </Text>
+                <Text as="p" variant="bodySm" alignment="center" tone="subdued">
+                  Product verification methods appear here once physical pieces are registered.
+                </Text>
+              </div>
+            ) : (
+              <DataTable
+                columnContentTypes={['text', 'numeric', 'text', 'text']}
+                headings={['Product', 'Pieces', 'Verification Methods', '']}
+                rows={rows}
+              />
+            )}
           </Card>
         </Layout.Section>
         <Layout.Section variant="oneThird">

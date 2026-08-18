@@ -1,96 +1,125 @@
 import React, { useState, useEffect } from 'react';
-import { useTenant } from '../../context/TenantContext';
 import { authFetch } from '../../utils/api';
-import { Users, Crown, Coins, Tag, Search, ShieldCheck, Mail, ArrowRight } from 'lucide-react';
+import { useTenant } from '../../context/TenantContext';
+import {
+  Page,
+  Layout,
+  Card,
+  DataTable,
+  TextField,
+  Badge,
+  Text,
+  Box,
+  Spinner,
+} from '@shopify/polaris';
+import { Users } from 'lucide-react';
+
+interface Customer {
+  id: string;
+  name?: string;
+  email: string;
+  tier?: string;
+  pieces_count?: number;
+  credits_balance?: number;
+  registered_since?: string;
+  total_spend?: string;
+}
 
 export const CustomersView: React.FC = () => {
   const { currentTenant } = useTenant();
-  const [customers, setCustomers] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
     authFetch('/api/admin/customers')
       .then((res) => res.json())
-      .then((data) => setCustomers(data.customers ?? data ?? []))
-      .catch(() => setCustomers([]));
+      .then((data) => {
+        const raw = data.data;
+        if (Array.isArray(raw)) {
+          setCustomers(raw);
+        } else if (raw?.customers && Array.isArray(raw.customers)) {
+          setCustomers(raw.customers);
+        } else {
+          setCustomers([]);
+        }
+      })
+      .catch(() => setCustomers([]))
+      .finally(() => setLoading(false));
   }, []);
 
-  const filtered = customers.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.email.toLowerCase().includes(search.toLowerCase()) ||
-      c.tier.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = customers.filter((c) => {
+    const name = (c.name || '').toLowerCase();
+    const email = (c.email || '').toLowerCase();
+    const tier = (c.tier || '').toLowerCase();
+    const q = search.toLowerCase();
+    return name.includes(q) || email.includes(q) || tier.includes(q);
+  });
+
+  const rows = filtered.map((c) => [
+    <Text as="span" key="name" variant="bodyMd" fontWeight="semibold">
+      {c.name || '—'}
+    </Text>,
+    <Text as="span" key="email" variant="bodyMd">
+      {c.email}
+    </Text>,
+    <Badge key="tier" tone={c.tier ? 'attention' : 'info'}>
+      {c.tier || 'Unassigned'}
+    </Badge>,
+    <Text as="span" key="pieces" variant="bodyMd">
+      {c.pieces_count ?? 0}
+    </Text>,
+    <Text as="span" key="credits" variant="bodyMd">
+      {(c.credits_balance ?? 0).toLocaleString()} pts
+    </Text>,
+    <Text as="span" key="registered" variant="bodySm">
+      {c.registered_since || '—'}
+    </Text>,
+    <Text as="span" key="spend" variant="bodyMd">
+      {c.total_spend || '—'}
+    </Text>,
+  ]);
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-serif font-bold text-zinc-100">Collector Directory & VIP Circle</h2>
-          <p className="text-xs text-zinc-400 mt-1">
-            Verified owners, lifetime client profiles, patron tiers, and active vault piece counts.
-          </p>
-        </div>
-
-        <div className="relative w-full sm:w-64">
-          <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search by name, email or tier..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-9 pr-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-amber-500"
-          />
-        </div>
-      </div>
-
-      {/* Customers Table */}
-      <div className="glass-panel rounded-xl border border-zinc-800/80 overflow-hidden">
-        <div className="p-3.5 bg-zinc-900/80 border-b border-zinc-800 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2 text-zinc-300 font-semibold">
-            <Users className="w-4 h-4 text-amber-400" />
-            <span>Verified Collector Profiles</span>
-          </div>
-          <span className="text-[11px] text-zinc-500 font-mono">Sync: Shopify Customer Accounts</span>
-        </div>
-
-        <div className="divide-y divide-zinc-800/60">
-          {filtered.map((cust) => (
-            <div key={cust.id} className="p-4 text-xs hover:bg-zinc-900/30 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-zinc-100 text-sm">{cust.name}</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
-                    <Crown className="w-3 h-3" />
-                    <span>{cust.tier}</span>
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-4 text-[11px] text-zinc-400">
-                  <span className="flex items-center gap-1">
-                    <Mail className="w-3 h-3 text-zinc-500" />
-                    <span>{cust.email}</span>
-                  </span>
-                  <span>Registered: {cust.registered_since}</span>
-                  <span className="text-zinc-300">Lifetime Volume: <strong>{cust.total_spend}</strong></span>
-                </div>
+    <Page title="Collector Directory & VIP Circle" subtitle="Verified owners, lifetime client profiles, patron tiers, and active vault piece counts.">
+      <Layout>
+        <Layout.Section>
+          <Card>
+            <Box padding="400">
+              <TextField
+                prefix={<Search className="w-4 h-4 text-zinc-400" />}
+                placeholder="Search by name, email or tier..."
+                value={search}
+                onChange={setSearch}
+                autoComplete="off"
+                clearButton
+                onClear={() => setSearch('')}
+              />
+            </Box>
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Spinner size="large" />
               </div>
-
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <span className="text-zinc-500 text-[10px] block">Vault Pieces</span>
-                  <span className="font-mono text-emerald-400 font-bold">{cust.pieces_count} Pieces</span>
-                </div>
-
-                <div className="text-right">
-                  <span className="text-zinc-500 text-[10px] block">{currentTenant.settings.credits_term}</span>
-                  <span className="font-mono text-amber-400 font-bold">{cust.credits_balance.toLocaleString()} pts</span>
-                </div>
+            ) : filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Users className="w-10 h-10 text-zinc-600" />
+                <Text as="p" variant="bodyMd" alignment="center" tone="subdued">
+                  {search ? `No collectors matching "${search}"` : 'No collector profiles yet'}
+                </Text>
+                <Text as="p" variant="bodySm" alignment="center" tone="subdued">
+                  Collector profiles are created when customers purchase or register pieces.
+                </Text>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+            ) : (
+              <DataTable
+                columnContentTypes={['text', 'text', 'text', 'numeric', 'numeric', 'text', 'text']}
+                headings={['Collector', 'Email', 'Tier', 'Pieces', currentTenant.settings.credits_term, 'Member Since', 'Lifetime Volume']}
+                rows={rows}
+              />
+            )}
+          </Card>
+        </Layout.Section>
+      </Layout>
+    </Page>
   );
 };
