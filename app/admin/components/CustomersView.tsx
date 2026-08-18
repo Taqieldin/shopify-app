@@ -12,7 +12,7 @@ import {
   Box,
   Spinner,
 } from '@shopify/polaris';
-import { Users } from 'lucide-react';
+import { Users, Search } from 'lucide-react';
 
 interface Customer {
   id: string;
