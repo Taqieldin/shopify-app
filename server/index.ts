@@ -26,6 +26,23 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Debug endpoint (production only — shows what headers the server receives)
+app.get('/api/admin/debug-headers', (req, res) => {
+  res.json({
+    receivedHeaders: {
+      'x-shopify-shop-domain': req.headers['x-shopify-shop-domain'] || null,
+      'x-user-role': req.headers['x-user-role'] || null,
+      'x-actor-id': req.headers['x-actor-id'] || null,
+      'x-shop-domain': req.headers['x-shop-domain'] || null,
+    },
+    allHeaders: req.headers,
+    query: req.query,
+    url: req.url,
+    method: req.method,
+    nodeEnv: process.env.NODE_ENV,
+  });
+});
+
 // Domain API routes
 app.use('/api/auth', authRouter);
 app.use('/api/public', publicRouter);
