@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../utils/api';
 import {
-  Card,
   Page,
   Layout,
-  DataTable,
-  Badge,
-  Button,
-  Modal,
+  Card,
   TextField,
+  Button,
   Banner,
+  Badge,
+  Text,
+  Box,
   Spinner,
-  EmptyState,
+  InlineStack,
   Tabs,
   ResourceList,
   ResourceItem,
-  Text,
-  BlockStack,
-  InlineStack,
+  EmptyState,
 } from '@shopify/polaris';
 import { AlertTriangleIcon, ShieldPendingIcon, CheckCircleIcon } from '@shopify/polaris-icons';
 
@@ -51,15 +49,14 @@ interface BlockedNFC {
 }
 
 export function SecurityDashboardView() {
+  const [view, setView] = useState<'list' | 'block-nfc' | 'acknowledge-alert'>('list');
   const [selectedTab, setSelectedTab] = useState(0);
   const [alerts, setAlerts] = useState<SecurityAlert[]>([]);
   const [blockedNFCs, setBlockedNFCs] = useState<BlockedNFC[]>([]);
   const [loading, setLoading] = useState(true);
-  const [blockModalActive, setBlockModalActive] = useState(false);
   const [blockNfcUid, setBlockNfcUid] = useState('');
   const [blockReason, setBlockReason] = useState('');
   const [selectedAlert, setSelectedAlert] = useState<SecurityAlert | null>(null);
-  const [acknowledgeModalActive, setAcknowledgeModalActive] = useState(false);
   const [acknowledgeNotes, setAcknowledgeNotes] = useState('');
 
   useEffect(() => {
@@ -70,12 +67,10 @@ export function SecurityDashboardView() {
     setLoading(true);
     try {
       if (selectedTab === 0) {
-        // Load alerts
         const response = await authFetch('/api/admin/security/alerts?limit=100');
         const data = await response.json();
         setAlerts(data.data || []);
       } else if (selectedTab === 1) {
-        // Load blocked NFCs
         const response = await authFetch('/api/admin/security/blocked-nfc');
         const data = await response.json();
         setBlockedNFCs(data.data || []);
@@ -99,9 +94,9 @@ export function SecurityDashboardView() {
       });
 
       if (response.ok) {
-        setBlockModalActive(false);
         setBlockNfcUid('');
         setBlockReason('');
+        setView('list');
         loadSecurityData();
       }
     } catch (error) {
@@ -127,9 +122,7 @@ export function SecurityDashboardView() {
     if (!selectedAlert) return;
 
     try {
-      // In production, you'd need the event ID from the alert
-      // For now, we'll just close the modal
-      setAcknowledgeModalActive(false);
+      setView('list');
       setSelectedAlert(null);
       setAcknowledgeNotes('');
       loadSecurityData();
@@ -183,16 +176,162 @@ export function SecurityDashboardView() {
   const criticalAlerts = alerts.filter((a) => a.level === 'CRITICAL');
   const highAlerts = alerts.filter((a) => a.level === 'HIGH');
 
+  // BLOCK NFC VIEW
+  if (view === 'block-nfc') {
+    return (
+      <Page title="Block NFC UID">
+        <Layout>
+          <Layout.Section>
+            <Box paddingBlockStart="400">
+              <Button onClick={() => setView('list')} variant="plain">
+                ← Back to Security Dashboard
+              </Button>
+            </Box>
+          </Layout.Section>
+
+          <Layout.Section>
+            <Card>
+              <Box padding="600">
+                <Box paddingBlockEnd="300">
+                  <Text as="h2" variant="headingMd">
+                    Block NFC UID
+                  </Text>
+                </Box>
+
+                <TextField
+                  label="NFC UID"
+                  value={blockNfcUid}
+                  onChange={setBlockNfcUid}
+                  placeholder="04:A1:B2:C3:D4:E5:F6"
+                  autoComplete="off"
+                  helpText="Enter the NFC UID to block from authentication"
+                />
+
+                <Box paddingBlockStart="300">
+                  <TextField
+                    label="Reason"
+                    value={blockReason}
+                    onChange={setBlockReason}
+                    multiline={3}
+                    placeholder="Why is this NFC UID being blocked?"
+                    autoComplete="off"
+                  />
+                </Box>
+
+                <Box paddingBlockStart="300">
+                  <Banner tone="warning">
+                    <p>Blocking this NFC UID will:</p>
+                    <ul>
+                      <li>Prevent authentication with this tag</li>
+                      <li>Mark all pieces with this UID as UNDER_REVIEW</li>
+                      <li>Return REVOKED status on future scans</li>
+                    </ul>
+                  </Banner>
+                </Box>
+
+                <Box paddingBlockStart="500">
+                  <InlineStack gap="200" align="end">
+                    <Button onClick={() => setView('list')}>Cancel</Button>
+                    <Button
+                      variant="primary"
+                      onClick={handleBlockNFC}
+                      disabled={!blockNfcUid || !blockReason}
+                    >
+                      Block
+                    </Button>
+                  </InlineStack>
+                </Box>
+              </Box>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
+
+  // ACKNOWLEDGE ALERT VIEW
+  if (view === 'acknowledge-alert' && selectedAlert) {
+    return (
+      <Page title="Acknowledge Security Alert">
+        <Layout>
+          <Layout.Section>
+            <Box paddingBlockStart="400">
+              <Button onClick={() => setView('list')} variant="plain">
+                ← Back to Security Dashboard
+              </Button>
+            </Box>
+          </Layout.Section>
+
+          <Layout.Section>
+            <Card>
+              <Box padding="600">
+                <Box paddingBlockEnd="300">
+                  <InlineStack gap="200" blockAlign="center">
+                    <Badge tone={getBadgeStatus(selectedAlert.level)}>
+                      {selectedAlert.level}
+                    </Badge>
+                    <Text as="h2" variant="headingMd">
+                      {selectedAlert.type.replace(/_/g, ' ')}
+                    </Text>
+                  </InlineStack>
+                  <Box paddingBlockStart="100">
+                    <Text as="p" variant="bodySm">
+                      {selectedAlert.message}
+                    </Text>
+                    <Text as="p" variant="bodySm" color="subdued">
+                      Serial: {selectedAlert.serial}
+                    </Text>
+                  </Box>
+                </Box>
+
+                <Box paddingBlockStart="300">
+                  <Text as="h4" variant="headingSm">
+                    Details
+                  </Text>
+                  <Box paddingBlockStart="100">
+                    <pre style={{ fontSize: '12px', background: '#f6f6f7', padding: '12px', borderRadius: '4px' }}>
+                      {JSON.stringify(selectedAlert.details, null, 2)}
+                    </pre>
+                  </Box>
+                </Box>
+
+                <Box paddingBlockStart="300">
+                  <TextField
+                    label="Resolution Notes"
+                    value={acknowledgeNotes}
+                    onChange={setAcknowledgeNotes}
+                    multiline={3}
+                    placeholder="What action was taken to resolve this alert?"
+                    autoComplete="off"
+                  />
+                </Box>
+
+                <Box paddingBlockStart="500">
+                  <InlineStack gap="200" align="end">
+                    <Button onClick={() => { setView('list'); setSelectedAlert(null); }}>Cancel</Button>
+                    <Button variant="primary" onClick={handleAcknowledgeAlert}>
+                      Acknowledge
+                    </Button>
+                  </InlineStack>
+                </Box>
+              </Box>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
+
+  // LIST VIEW (Security Dashboard)
   return (
     <Page
       title="Security Dashboard"
       primaryAction={{
         content: 'Block NFC UID',
-        onAction: () => setBlockModalActive(true),
+        onAction: () => setView('block-nfc'),
       }}
     >
       <Layout>
-        {/* Summary Banners */}
         {criticalAlerts.length > 0 && (
           <Layout.Section>
             <Banner
@@ -215,49 +354,44 @@ export function SecurityDashboardView() {
           </Layout.Section>
         )}
 
-        {/* Overview Cards */}
         <Layout.Section>
-          <InlineStack gap="400">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
             <Card>
-              <BlockStack gap="200">
-                <Text as="h2" variant="headingMd">
+              <Box padding="400">
+                <Text as="h2" variant="headingSm">
                   Total Alerts
                 </Text>
                 <Text as="p" variant="heading2xl">
                   {alerts.length}
                 </Text>
-              </BlockStack>
+              </Box>
             </Card>
-
             <Card>
-              <BlockStack gap="200">
-                <Text as="h2" variant="headingMd">
+              <Box padding="400">
+                <Text as="h2" variant="headingSm">
                   Critical Alerts
                 </Text>
-                <Text as="p" variant="heading2xl" tone="critical">
+                <Text as="p" variant="heading2xl" color="critical">
                   {criticalAlerts.length}
                 </Text>
-              </BlockStack>
+              </Box>
             </Card>
-
             <Card>
-              <BlockStack gap="200">
-                <Text as="h2" variant="headingMd">
+              <Box padding="400">
+                <Text as="h2" variant="headingSm">
                   Blocked NFC UIDs
                 </Text>
                 <Text as="p" variant="heading2xl">
                   {blockedNFCs.length}
                 </Text>
-              </BlockStack>
+              </Box>
             </Card>
-          </InlineStack>
+          </div>
         </Layout.Section>
 
-        {/* Tabs */}
         <Layout.Section>
           <Card>
             <Tabs tabs={tabs} selected={selectedTab} onSelect={setSelectedTab}>
-              {/* Alerts Tab */}
               {selectedTab === 0 && (
                 <div style={{ padding: '16px' }}>
                   {loading ? (
@@ -282,29 +416,29 @@ export function SecurityDashboardView() {
                             id={`${serial}-${timestamp}`}
                             onClick={() => {
                               setSelectedAlert(alert);
-                              setAcknowledgeModalActive(true);
+                              setView('acknowledge-alert');
                             }}
                           >
-                            <BlockStack gap="200">
-                              <InlineStack align="space-between" blockAlign="center">
-                                <InlineStack gap="200" blockAlign="center">
-                                  {getAlertIcon(level)}
-                                  <Text as="h3" variant="bodyMd" fontWeight="bold">
-                                    {type.replace(/_/g, ' ')}
-                                  </Text>
-                                  <Badge tone={getBadgeStatus(level)}>{level}</Badge>
-                                </InlineStack>
-                                <Text as="span" variant="bodySm" tone="subdued">
-                                  {new Date(timestamp).toLocaleString()}
+                            <InlineStack align="space-between" blockAlign="center">
+                              <InlineStack gap="200" blockAlign="center">
+                                {getAlertIcon(level)}
+                                <Text as="h3" variant="bodyMd" fontWeight="bold">
+                                  {type.replace(/_/g, ' ')}
                                 </Text>
+                                <Badge tone={getBadgeStatus(level)}>{level}</Badge>
                               </InlineStack>
+                              <Text as="span" variant="bodySm" color="subdued">
+                                {new Date(timestamp).toLocaleString()}
+                              </Text>
+                            </InlineStack>
+                            <Box paddingBlockStart="100">
                               <Text as="p" variant="bodySm">
                                 {message}
                               </Text>
-                              <Text as="p" variant="bodySm" tone="subdued">
+                              <Text as="p" variant="bodySm" color="subdued">
                                 Serial: {serial}
                               </Text>
-                            </BlockStack>
+                            </Box>
                           </ResourceItem>
                         );
                       }}
@@ -313,7 +447,6 @@ export function SecurityDashboardView() {
                 </div>
               )}
 
-              {/* Blocked NFC Tab */}
               {selectedTab === 1 && (
                 <div style={{ padding: '16px' }}>
                   {loading ? (
@@ -335,25 +468,25 @@ export function SecurityDashboardView() {
                         const { nfc_uid, reason, blocked_by, blocked_at } = blocked;
                         return (
                           <ResourceItem id={nfc_uid} onClick={() => {}}>
-                            <BlockStack gap="200">
-                              <InlineStack align="space-between" blockAlign="center">
-                                <Text as="h3" variant="bodyMd" fontWeight="bold">
-                                  {nfc_uid}
-                                </Text>
-                                <Button
-                                  size="slim"
-                                  onClick={() => handleUnblockNFC(nfc_uid)}
-                                >
-                                  Unblock
-                                </Button>
-                              </InlineStack>
+                            <InlineStack align="space-between" blockAlign="center">
+                              <Text as="h3" variant="bodyMd" fontWeight="bold">
+                                {nfc_uid}
+                              </Text>
+                              <Button
+                                size="slim"
+                                onClick={() => handleUnblockNFC(nfc_uid)}
+                              >
+                                Unblock
+                              </Button>
+                            </InlineStack>
+                            <Box paddingBlockStart="100">
                               <Text as="p" variant="bodySm">
                                 Reason: {reason}
                               </Text>
-                              <Text as="p" variant="bodySm" tone="subdued">
+                              <Text as="p" variant="bodySm" color="subdued">
                                 Blocked by {blocked_by} on {new Date(blocked_at).toLocaleString()}
                               </Text>
-                            </BlockStack>
+                            </Box>
                           </ResourceItem>
                         );
                       }}
@@ -365,111 +498,6 @@ export function SecurityDashboardView() {
           </Card>
         </Layout.Section>
       </Layout>
-
-      {/* Block NFC Modal */}
-      <Modal
-        open={blockModalActive}
-        onClose={() => setBlockModalActive(false)}
-        title="Block NFC UID"
-        primaryAction={{
-          content: 'Block',
-          onAction: handleBlockNFC,
-          disabled: !blockNfcUid || !blockReason,
-        }}
-        secondaryActions={[
-          {
-            content: 'Cancel',
-            onAction: () => setBlockModalActive(false),
-          },
-        ]}
-      >
-        <Modal.Section>
-          <BlockStack gap="400">
-            <TextField
-              label="NFC UID"
-              value={blockNfcUid}
-              onChange={setBlockNfcUid}
-              placeholder="04:A1:B2:C3:D4:E5:F6"
-              autoComplete="off"
-              helpText="Enter the NFC UID to block from authentication"
-            />
-            <TextField
-              label="Reason"
-              value={blockReason}
-              onChange={setBlockReason}
-              multiline={3}
-              placeholder="Why is this NFC UID being blocked?"
-              autoComplete="off"
-            />
-            <Banner tone="warning">
-              <p>
-                Blocking this NFC UID will:
-              </p>
-              <ul>
-                <li>Prevent authentication with this tag</li>
-                <li>Mark all pieces with this UID as UNDER_REVIEW</li>
-                <li>Return REVOKED status on future scans</li>
-              </ul>
-            </Banner>
-          </BlockStack>
-        </Modal.Section>
-      </Modal>
-
-      {/* Acknowledge Alert Modal */}
-      <Modal
-        open={acknowledgeModalActive}
-        onClose={() => setAcknowledgeModalActive(false)}
-        title="Acknowledge Security Alert"
-        primaryAction={{
-          content: 'Acknowledge',
-          onAction: handleAcknowledgeAlert,
-        }}
-        secondaryActions={[
-          {
-            content: 'Cancel',
-            onAction: () => setAcknowledgeModalActive(false),
-          },
-        ]}
-      >
-        <Modal.Section>
-          {selectedAlert && (
-            <BlockStack gap="400">
-              <BlockStack gap="200">
-                <Text as="h3" variant="headingMd">
-                  {selectedAlert.type.replace(/_/g, ' ')}
-                </Text>
-                <Badge tone={getBadgeStatus(selectedAlert.level)}>
-                  {selectedAlert.level}
-                </Badge>
-                <Text as="p" variant="bodySm">
-                  {selectedAlert.message}
-                </Text>
-                <Text as="p" variant="bodySm" tone="subdued">
-                  Serial: {selectedAlert.serial}
-                </Text>
-              </BlockStack>
-
-              <BlockStack gap="200">
-                <Text as="h4" variant="headingSm">
-                  Details
-                </Text>
-                <pre style={{ fontSize: '12px', background: '#f6f6f7', padding: '12px', borderRadius: '4px' }}>
-                  {JSON.stringify(selectedAlert.details, null, 2)}
-                </pre>
-              </BlockStack>
-
-              <TextField
-                label="Resolution Notes"
-                value={acknowledgeNotes}
-                onChange={setAcknowledgeNotes}
-                multiline={3}
-                placeholder="What action was taken to resolve this alert?"
-                autoComplete="off"
-              />
-            </BlockStack>
-          )}
-        </Modal.Section>
-      </Modal>
     </Page>
   );
 }
