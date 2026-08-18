@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { AppProvider } from '@shopify/polaris';
 import { AppBridgeProvider } from './providers/AppBridgeProvider';
 import { TenantProvider } from './context/TenantContext';
 import { AdminLayout } from './admin/components/AdminLayout';
@@ -80,6 +81,7 @@ export const App: React.FC = () => {
   }, []);
 
   return (
+    <AppProvider i18n={{}}>
     <AppBridgeProvider>
       <TenantProvider>
         {currentTab === 'public-passport' && viewingSerial ? (
@@ -122,6 +124,7 @@ export const App: React.FC = () => {
         )}
       </TenantProvider>
     </AppBridgeProvider>
+    </AppProvider>
   );
 };
 
