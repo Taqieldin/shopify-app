@@ -130,7 +130,7 @@ export const CareServicesView: React.FC = () => {
       primaryAction={{
         content: 'Open Service Ticket',
         onAction: () => setView('create'),
-        icon: Plus,
+        icon: <Plus />,
       }}
     >
       <Layout>

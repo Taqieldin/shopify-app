@@ -326,13 +326,13 @@ export const PhysicalPiecesView: React.FC = () => {
       primaryAction={{
         content: 'Register New Piece',
         onAction: () => setView('create'),
-        icon: Plus,
+        icon: <Plus />,
       }}
       secondaryActions={[
         {
           content: 'Batch Import CSV',
           onAction: () => setView('csv-import'),
-          icon: UploadCloud,
+          icon: <UploadCloud />,
         },
       ]}
     >

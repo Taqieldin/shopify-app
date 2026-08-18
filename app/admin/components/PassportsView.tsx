@@ -303,13 +303,13 @@ export const PassportsView: React.FC<{ onPreviewPassport: (serial: string) => vo
           });
           setView('create');
         },
-        icon: Plus,
+        icon: <Plus />,
       }}
       secondaryActions={[
         {
           content: 'Import CSV',
           onAction: () => setView('csv-import'),
-          icon: Upload,
+          icon: <Upload />,
         },
       ]}
     >

@@ -113,7 +113,7 @@ export const TransfersView: React.FC = () => {
       primaryAction={{
         content: 'Initiate Assisted Transfer',
         onAction: () => setView('create'),
-        icon: ArrowRightLeft,
+        icon: <ArrowRightLeft />,
       }}
     >
       <Layout>

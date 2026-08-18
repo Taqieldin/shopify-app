@@ -134,7 +134,7 @@ export const EarlyAccessView: React.FC = () => {
       primaryAction={{
         content: 'New Private Drop Rule',
         onAction: () => setView('create'),
-        icon: Plus,
+        icon: <Plus />,
       }}
     >
       <Layout>

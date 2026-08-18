@@ -109,7 +109,7 @@ export const CreditsLedgerView: React.FC = () => {
       primaryAction={{
         content: 'Post Manual Transaction',
         onAction: () => setView('create'),
-        icon: Coins,
+        icon: <Coins />,
       }}
     >
       <Layout>

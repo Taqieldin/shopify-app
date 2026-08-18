@@ -110,7 +110,7 @@ export const LostStolenView: React.FC = () => {
       primaryAction={{
         content: 'Report Lost or Stolen Piece',
         onAction: () => setView('create'),
-        icon: ShieldAlert,
+        icon: <ShieldAlert />,
       }}
     >
       <Layout>
